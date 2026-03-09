@@ -2774,104 +2774,7 @@ function renderProfile(empId) {
       <!-- KIDEM -->
       <div class="profile-section">
         <div class="profile-section-title">📅 Kıdem & Deneme Süresi</div>
-        ${(() => {
-          const giris = hr.giristarihi ? new Date(hr.giristarihi) : null;
-          const sgkBas = hr.sgkbaslangic ? new Date(hr.sgkbaslangic) : null;
-          const now = new Date();
-          function kidemHesapla(bas) {
-            if (!bas) return null;
-            const yil = now.getFullYear() - bas.getFullYear();
-            const ay = now.getMonth() - bas.getMonth();
-            const toplamAy = yil * 12 + ay;
-            const gYil = Math.floor(toplamAy / 12);
-            const gAy = toplamAy % 12;
-            return { yil: gYil, ay: gAy, toplamAy };
-          }
-          function yillikIzinHak(toplamAy) {
-            if (toplamAy < 12) return 0;
-            if (toplamAy < 60) return 14;
-            return 20;
-          }
-          function denemeDurum(bas) {
-            if (!bas) return null;
-            const denemeMs = 90 * 24 * 60 * 60 * 1000;
-            const gecen = now - bas;
-            if (gecen < denemeMs) {
-              const kalanGun = Math.ceil((denemeMs - gecen) / (24*60*60*1000));
-              return { bitti: false, kalanGun };
-            }
-            return { bitti: true };
-          }
-          const fiiliKidem = kidemHesapla(giris);
-          const sgkKidem = kidemHesapla(sgkBas);
-          const deneme = denemeDurum(giris);
-          const izinHak = fiiliKidem ? yillikIzinHak(fiiliKidem.toplamAy) : 14;
-          return \`
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
-              <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center">
-                <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Fiili Kıdem</div>
-                <div style="font-size:18px;font-weight:700;color:var(--accent)">\${fiiliKidem ? fiiliKidem.yil+'y '+fiiliKidem.ay+'a' : '—'}</div>
-              </div>
-              <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center">
-                <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">SGK Kıdemi</div>
-                <div style="font-size:18px;font-weight:700;color:var(--accent2)">\${sgkKidem ? sgkKidem.yil+'y '+sgkKidem.ay+'a' : '—'}</div>
-              </div>
-              <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center">
-                <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Yıllık İzin Hakkı</div>
-                <div style="font-size:18px;font-weight:700;color:var(--green)">\${izinHak} gün</div>
-              </div>
-              <div style="background:var(--surface);border:1px solid \${deneme && !deneme.bitti ? 'rgba(245,158,11,0.4)' : 'var(--border)'};border-radius:10px;padding:12px;text-align:center">
-                <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Deneme Süresi</div>
-                <div style="font-size:14px;font-weight:700;color:\${!deneme ? 'var(--text3)' : deneme.bitti ? 'var(--green)' : 'var(--orange)'}">\${!deneme ? '—' : deneme.bitti ? '✅ Tamamlandı' : '⏳ '+deneme.kalanGun+' gün kaldı'}</div>
-              </div>
-            </div>
-          \`;
-        })()}
-      </div>
-
-      <!-- İZİN BAKİYESİ -->
-      <div class="profile-section">
-        <div class="profile-section-title">🏖️ İzin Yönetimi</div>
-        <div class="izin-balance">
-          <div class="izin-bal-card">
-            <div class="izin-bal-val">${annualLeave}</div>
-            <div class="izin-bal-lbl">Yıllık Hak</div>
-          </div>
-          <div class="izin-bal-card">
-            <div class="izin-bal-val" style="color:var(--red)">${usedLeave}</div>
-            <div class="izin-bal-lbl">Kullanılan</div>
-          </div>
-          <div class="izin-bal-card">
-            <div class="izin-bal-val" style="color:${remaining>0?'var(--green)':'var(--red)'}">${remaining}</div>
-            <div class="izin-bal-lbl">Kalan</div>
-          </div>
-        </div>
-        <div class="profile-fields">
-          <div class="profile-field">
-            <label class="profile-field-label">Yıllık İzin Hakkı (gün)</label>
-            <input class="profile-input" id="pf_yillikIzin" type="number" value="${hr.yillikIzin||14}" min="0">
-          </div>
-          <div class="profile-field">
-            <label class="profile-field-label">Kullanılan İzin (gün)</label>
-            <input class="profile-input" id="pf_kullanilanIzin" type="number" value="${hr.kullanilanIzin||0}" min="0">
-          </div>
-        </div>
-        <div style="margin-top:12px">
-          <div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:8px">İzin Geçmişi</div>
-          <div id="izinGecmisi">
-            ${(hr.izinGecmisi||[]).length === 0 
-              ? '<div style="font-size:12px;color:var(--text3);text-align:center;padding:12px">Kayıtlı izin yok</div>'
-              : (hr.izinGecmisi||[]).map((iz,i) => `
-                <div class="izin-row">
-                  <span class="izin-type">${iz.tip}</span>
-                  <span class="izin-date">${iz.baslangic} → ${iz.bitis}</span>
-                  <span class="izin-days">${iz.gun}G</span>
-                  <button onclick="deleteIzin(${empId},${i})" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;padding:0 4px">×</button>
-                </div>`).join('')
-            }
-          </div>
-          <button class="btn btn-ghost" style="width:100%;margin-top:8px;font-size:12px" onclick="addIzinModal(${empId})">+ İzin Kaydı Ekle</button>
-        </div>
+        <div id="kidemBox"></div>
       </div>
 
       <!-- NOTLAR -->
@@ -2883,6 +2786,64 @@ function renderProfile(empId) {
     </div>
     <button class="save-profile-btn" onclick="saveProfile(${empId})">💾 Kaydet</button>
   `;
+
+  // Kıdem kutusunu JS ile doldur (template literal sorunundan kaçınmak için)
+  renderKidemBox(empId, hr);
+}
+
+function renderKidemBox(empId, hr) {
+  const box = document.getElementById('kidemBox');
+  if (!box) return;
+  const now = new Date();
+
+  function kidemHesapla(tarih) {
+    if (!tarih) return null;
+    const bas = new Date(tarih);
+    const toplamAy = (now.getFullYear() - bas.getFullYear()) * 12 + (now.getMonth() - bas.getMonth());
+    return { yil: Math.floor(toplamAy/12), ay: toplamAy%12, toplamAy };
+  }
+  function izinHak(toplamAy) {
+    if (toplamAy < 12) return 0;
+    if (toplamAy < 60) return 14;
+    return 20;
+  }
+
+  const fiili = kidemHesapla(hr.giristarihi);
+  const sgk   = kidemHesapla(hr.sgkbaslangic);
+  const hak   = fiili ? izinHak(fiili.toplamAy) : 14;
+
+  // Deneme süresi (3 ay = 90 gün)
+  let denemeHTML = '<span style="color:var(--text3)">—</span>';
+  if (hr.giristarihi) {
+    const bas = new Date(hr.giristarihi);
+    const kalanMs = (bas.getTime() + 90*24*60*60*1000) - now.getTime();
+    if (kalanMs > 0) {
+      const kalanGun = Math.ceil(kalanMs / (24*60*60*1000));
+      denemeHTML = '<span style="color:var(--orange)">⏳ ' + kalanGun + ' gün kaldı</span>';
+    } else {
+      denemeHTML = '<span style="color:var(--green)">✅ Tamamlandı</span>';
+    }
+  }
+
+  box.innerHTML =
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">' +
+      '<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center">' +
+        '<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Fiili Kıdem</div>' +
+        '<div style="font-size:18px;font-weight:700;color:var(--accent)">' + (fiili ? fiili.yil+'y '+fiili.ay+'a' : '—') + '</div>' +
+      '</div>' +
+      '<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center">' +
+        '<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">SGK Kıdemi</div>' +
+        '<div style="font-size:18px;font-weight:700;color:var(--accent2)">' + (sgk ? sgk.yil+'y '+sgk.ay+'a' : '—') + '</div>' +
+      '</div>' +
+      '<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center">' +
+        '<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Yıllık İzin Hakkı</div>' +
+        '<div style="font-size:18px;font-weight:700;color:var(--green)">' + hak + ' gün</div>' +
+      '</div>' +
+      '<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center">' +
+        '<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Deneme Süresi</div>' +
+        '<div style="font-size:13px;font-weight:700">' + denemeHTML + '</div>' +
+      '</div>' +
+    '</div>';
 }
 
 function saveProfile(empId) {
