@@ -2713,16 +2713,16 @@ function renderProfile(empId) {
         <div class="profile-section-title">💼 Özlük Bilgileri</div>
         <div class="profile-fields">
           <div class="profile-field">
-            <label class="profile-field-label">İşe Giriş Tarihi</label>
-            <input class="profile-input" id="pf_giris" type="date" value="${hr.giristarihi||''}">
+            <label class="profile-field-label">Fiili İşe Giriş</label>
+            <input class="profile-input" id="pf_giris" type="date" value="${hr.giristarihi||''}" title="Gerçek çalışma başlangıcı">
+          </div>
+          <div class="profile-field">
+            <label class="profile-field-label">Resmi SGK Başlangıcı</label>
+            <input class="profile-input" id="pf_sgkbaslangic" type="date" value="${hr.sgkbaslangic||''}" title="SGK'ya bildirim tarihi">
           </div>
           <div class="profile-field">
             <label class="profile-field-label">SGK No</label>
             <input class="profile-input" id="pf_sgk" placeholder="———" value="${hr.sgk||''}">
-          </div>
-          <div class="profile-field">
-            <label class="profile-field-label">Maaş (₺)</label>
-            <input class="profile-input" id="pf_maas" type="number" placeholder="0" value="${hr.maas||''}">
           </div>
           <div class="profile-field">
             <label class="profile-field-label">Sözleşme Tipi</label>
@@ -2740,6 +2740,93 @@ function renderProfile(empId) {
             <input class="profile-input" id="pf_departman" placeholder="Satış, Depo..." value="${hr.departman||''}">
           </div>
         </div>
+      </div>
+
+      <!-- MAAŞ -->
+      <div class="profile-section">
+        <div class="profile-section-title">💰 Maaş & Ödemeler <span style="font-size:10px;color:var(--text3);font-weight:400">(net ₺)</span></div>
+        <div class="profile-fields">
+          <div class="profile-field">
+            <label class="profile-field-label">Resmi Net Maaş (₺)</label>
+            <input class="profile-input" id="pf_maas" type="number" placeholder="0" value="${hr.maas||''}" oninput="calcTotalNet()">
+          </div>
+          <div class="profile-field">
+            <label class="profile-field-label">Elden Maaş (₺)</label>
+            <input class="profile-input" id="pf_eldenmaas" type="number" placeholder="0" value="${hr.eldenmaas||''}" oninput="calcTotalNet()">
+          </div>
+          <div class="profile-field">
+            <label class="profile-field-label">Setcard (₺/ay)</label>
+            <input class="profile-input" id="pf_setcard" type="number" placeholder="0" value="${hr.setcard||''}">
+          </div>
+          <div class="profile-field">
+            <label class="profile-field-label">Yol Parası (₺/ay)</label>
+            <input class="profile-input" id="pf_yol" type="number" placeholder="0" value="${hr.yol||''}">
+          </div>
+          <div class="profile-field" style="grid-column:1/-1">
+            <label class="profile-field-label">Toplam Net Maaş</label>
+            <input class="profile-input" id="pf_toplamnet" readonly
+              style="color:var(--green);font-weight:700;font-family:'JetBrains Mono',monospace;cursor:default"
+              value="${((parseFloat(hr.maas||0)+parseFloat(hr.eldenmaas||0))).toLocaleString('tr-TR')} ₺">
+          </div>
+        </div>
+      </div>
+
+      <!-- KIDEM -->
+      <div class="profile-section">
+        <div class="profile-section-title">📅 Kıdem & Deneme Süresi</div>
+        ${(() => {
+          const giris = hr.giristarihi ? new Date(hr.giristarihi) : null;
+          const sgkBas = hr.sgkbaslangic ? new Date(hr.sgkbaslangic) : null;
+          const now = new Date();
+          function kidemHesapla(bas) {
+            if (!bas) return null;
+            const yil = now.getFullYear() - bas.getFullYear();
+            const ay = now.getMonth() - bas.getMonth();
+            const toplamAy = yil * 12 + ay;
+            const gYil = Math.floor(toplamAy / 12);
+            const gAy = toplamAy % 12;
+            return { yil: gYil, ay: gAy, toplamAy };
+          }
+          function yillikIzinHak(toplamAy) {
+            if (toplamAy < 12) return 0;
+            if (toplamAy < 60) return 14;
+            return 20;
+          }
+          function denemeDurum(bas) {
+            if (!bas) return null;
+            const denemeMs = 90 * 24 * 60 * 60 * 1000;
+            const gecen = now - bas;
+            if (gecen < denemeMs) {
+              const kalanGun = Math.ceil((denemeMs - gecen) / (24*60*60*1000));
+              return { bitti: false, kalanGun };
+            }
+            return { bitti: true };
+          }
+          const fiiliKidem = kidemHesapla(giris);
+          const sgkKidem = kidemHesapla(sgkBas);
+          const deneme = denemeDurum(giris);
+          const izinHak = fiiliKidem ? yillikIzinHak(fiiliKidem.toplamAy) : 14;
+          return \`
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+              <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center">
+                <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Fiili Kıdem</div>
+                <div style="font-size:18px;font-weight:700;color:var(--accent)">\${fiiliKidem ? fiiliKidem.yil+'y '+fiiliKidem.ay+'a' : '—'}</div>
+              </div>
+              <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center">
+                <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">SGK Kıdemi</div>
+                <div style="font-size:18px;font-weight:700;color:var(--accent2)">\${sgkKidem ? sgkKidem.yil+'y '+sgkKidem.ay+'a' : '—'}</div>
+              </div>
+              <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center">
+                <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Yıllık İzin Hakkı</div>
+                <div style="font-size:18px;font-weight:700;color:var(--green)">\${izinHak} gün</div>
+              </div>
+              <div style="background:var(--surface);border:1px solid \${deneme && !deneme.bitti ? 'rgba(245,158,11,0.4)' : 'var(--border)'};border-radius:10px;padding:12px;text-align:center">
+                <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Deneme Süresi</div>
+                <div style="font-size:14px;font-weight:700;color:\${!deneme ? 'var(--text3)' : deneme.bitti ? 'var(--green)' : 'var(--orange)'}">\${!deneme ? '—' : deneme.bitti ? '✅ Tamamlandı' : '⏳ '+deneme.kalanGun+' gün kaldı'}</div>
+              </div>
+            </div>
+          \`;
+        })()}
       </div>
 
       <!-- İZİN BAKİYESİ -->
@@ -2799,19 +2886,33 @@ function renderProfile(empId) {
 }
 
 function saveProfile(empId) {
-  const fields = ['tc','dogum','tel','email','adres','giristarihi','sgk','maas',
+  const fields = ['tc','dogum','tel','email','adres','giristarihi','sgkbaslangic','sgk',
+                  'maas','eldenmaas','setcard','yol',
                   'sozlesme','pozisyon','departman','yillikIzin','kullanilanIzin','notlar'];
   const data = {};
   fields.forEach(f => {
     const el = document.getElementById('pf_' + f);
     if (el) data[f] = el.value;
   });
-  // Keep existing izinGecmisi
   const existing = getEmpHR(empId);
   data.izinGecmisi = existing.izinGecmisi || [];
+  // kıdem/izin hakkını otomatik hesapla
+  if (data.giristarihi) {
+    const now = new Date();
+    const bas = new Date(data.giristarihi);
+    const toplamAy = (now.getFullYear() - bas.getFullYear()) * 12 + (now.getMonth() - bas.getMonth());
+    data.yillikIzin = toplamAy < 12 ? 0 : toplamAy < 60 ? 14 : 20;
+  }
   saveEmpHR(empId, data);
   renderProfile(empId);
   renderPersonnelList();
+}
+
+function calcTotalNet() {
+  const resmi = parseFloat(document.getElementById('pf_maas')?.value || 0);
+  const elden = parseFloat(document.getElementById('pf_eldenmaas')?.value || 0);
+  const el = document.getElementById('pf_toplamnet');
+  if (el) el.value = (resmi + elden).toLocaleString('tr-TR') + ' ₺';
 }
 
 function deleteIzin(empId, idx) {
@@ -2823,7 +2924,7 @@ function deleteIzin(empId, idx) {
 
 // İzin ekleme mini modal
 function addIzinModal(empId) {
-  const tip = prompt('İzin tipi (Yıllık / Hastalık / Mazeret / Ücretsiz):') || 'Yıllık';
+  const tip = prompt('İzin tipi:\n1. Yıllık İzin (ücretli)\n2. İdari İzin (ücretli)\n3. Sağlık Raporu (ücretli)\n4. Resmi Tatil (ücretli)\n5. Ücretsiz İzin (kesintili)\n6. Yarım Gün İzin (kesintili)\n\nTip yazın:') || 'Yıllık İzin';
   const bas = prompt('Başlangıç tarihi (YYYY-AA-GG):');
   const bit = prompt('Bitiş tarihi (YYYY-AA-GG):');
   if (!bas || !bit) return;
@@ -3058,13 +3159,16 @@ const MONTHS_TR = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran',
                    'Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
 
 const DAY_STATUS = {
-  'calisma':       { label: 'Çalışma',          cls: 'status-calisma',       paid: true  },
-  'hafizin':       { label: 'Haftalık İzin',     cls: 'status-hafizin',       paid: true  },
-  'ucrsizizin':    { label: 'Ücretsiz İzin',     cls: 'status-ucrsizizin',    paid: false },
-  'saglikraporu':  { label: 'Sağlık Raporu',     cls: 'status-saglikraporu',  paid: true  },
-  'resmitatil':    { label: 'Resmi Tatil',       cls: 'status-resmitatil',    paid: true  },
-  'devamsizlik':   { label: 'Devamsızlık',       cls: 'status-devamsizlik',   paid: false },
-  'bosta':         { label: '—',                 cls: '',                     paid: false },
+  'calisma':     { label: 'Çalışma',          cls: 'status-calisma',      paid: true,  kesinti: 0      },
+  'yillikizin':  { label: 'Yıllık İzin',      cls: 'status-resmitatil',   paid: true,  kesinti: 0      },
+  'idariizin':   { label: 'İdari İzin',        cls: 'status-saglikraporu', paid: true,  kesinti: 0      },
+  'saglikraporu':{ label: 'Sağlık Raporu',     cls: 'status-saglikraporu', paid: true,  kesinti: 0      },
+  'resmitatil':  { label: 'Resmi Tatil',       cls: 'status-resmitatil',   paid: true,  kesinti: 0      },
+  'ucrsizizin':  { label: 'Ücretsiz İzin',     cls: 'status-ucrsizizin',   paid: false, kesinti: 1      },
+  'yarimgun':    { label: 'Yarım Gün İzin',    cls: 'status-ucrsizizin',   paid: false, kesinti: 0.5    },
+  'hafizin':     { label: 'Haftalık İzin',     cls: 'status-hafizin',      paid: true,  kesinti: 0      },
+  'devamsizlik': { label: 'Devamsızlık',       cls: 'status-devamsizlik',  paid: false, kesinti: 1      },
+  'bosta':       { label: '—',                 cls: '',                    paid: false, kesinti: 0      },
 };
 
 let puantajEmpId = null;
@@ -3120,7 +3224,7 @@ function renderPuantajEmpList() {
   body.innerHTML = employees.map(emp => {
     const hr = getEmpHR(emp.id);
     const puan = loadPuantaj(emp.id, puantajYear, puantajMonth);
-    const net = puan.netMaas ? `<span style="font-size:10px;color:var(--green);font-family:'JetBrains Mono',monospace">${Number(puan.netMaas).toLocaleString('tr-TR')}₺</span>` : '';
+    const net = puan.odenecekNet ? `<span style="font-size:10px;color:var(--green);font-family:'JetBrains Mono',monospace">${Number(puan.odenecekNet).toLocaleString('tr-TR')}₺</span>` : '';
     return `<div class="puantaj-emp-item ${emp.id===puantajEmpId?'selected':''}" onclick="selectPuantajEmp(${emp.id})">
       <div class="emp-badge" style="width:32px;height:32px;line-height:32px;font-size:11px;flex-shrink:0">${initials(emp.name)}</div>
       <div style="flex:1;min-width:0">
@@ -3187,14 +3291,16 @@ function renderPuantajBody() {
 
   // Count statistics
   const dayData = puan.days || {};
-  let calismaGun = 0, calismaHour = 0, hafIzin = 0, ucrIzin = 0, saglik = 0, tatil = 0, devamsiz = 0, mesaiHour = 0;
+  let calismaGun = 0, calismaHour = 0, hafIzin = 0, mesaiHour = 0;
+  let toplamKesinti = 0; // kesinti katsayısı (1 = tam gün, 0.5 = yarım gün)
+  let izinSayilari = { yillikizin:0, idariizin:0, saglikraporu:0, resmitatil:0, ucrsizizin:0, yarimgun:0, devamsizlik:0 };
+
+  const normalHour = parseFloat(hr.gunlukSaat || 8);
+
   days.forEach(({d, isWeekend}) => {
     const status = dayData[d]?.status || (isWeekend ? 'bosta' : 'calisma');
-    const gIn = dayData[d]?.in || '';
+    const gIn  = dayData[d]?.in  || '';
     const gOut = dayData[d]?.out || '';
-    const normalHour = hr.normalSaatBaslangic && hr.normalSaatBitis
-      ? calcHours(hr.normalSaatBaslangic, hr.normalSaatBitis)
-      : (hr.gunlukSaat ? parseFloat(hr.gunlukSaat) : 8);
 
     if (status === 'calisma') {
       calismaGun++;
@@ -3202,38 +3308,37 @@ function renderPuantajBody() {
       calismaHour += h;
       if (h > normalHour) mesaiHour += (h - normalHour);
     }
-    if (status === 'hafizin') hafIzin++;
-    if (status === 'ucrsizizin') ucrIzin++;
-    if (status === 'saglikraporu') saglik++;
-    if (status === 'resmitatil') tatil++;
-    if (status === 'devamsizlik') devamsiz++;
+    if (izinSayilari.hasOwnProperty(status)) izinSayilari[status]++;
+
+    // Kesinti hesabı
+    const st = DAY_STATUS[status];
+    if (st && st.kesinti > 0) toplamKesinti += st.kesinti;
+    if (status === 'yarimgun') { calismaGun += 0.5; calismaHour += normalHour/2; }
   });
 
-  // Salary calculation
-  const maas = parseFloat(hr.maas || 0);
-  const hesapYontemi = hr.hesapYontemi || 'gunluk';
-  const normalSaatlik = hr.saatlikUcret ? parseFloat(hr.saatlikUcret) : (maas > 0 ? maas / (22 * (parseFloat(hr.gunlukSaat)||8)) : 0);
-  const normalGunluk = maas > 0 ? maas / 22 : 0;
-  
-  let brutMaas = 0;
-  if (hesapYontemi === 'saatlik') {
-    brutMaas = calismaHour * normalSaatlik;
-  } else {
-    brutMaas = calismaGun * normalGunluk;
-  }
+  // NET maaş üzerinden hesaplama (30 gün sabit)
+  const resmiNet  = parseFloat(puan.s_resmiNet  ?? hr.maas ?? 0);
+  const eldenNet  = parseFloat(puan.s_eldenNet  ?? hr.eldenmaas ?? 0);
+  const setcard   = parseFloat(puan.s_setcard   ?? hr.setcard ?? 0);
+  const yolParasi = parseFloat(puan.s_yol       ?? hr.yol ?? 0);
+  const toplamNet = resmiNet + eldenNet;
 
-  // Mesai (overtime) = extra hours × saatlik ücret × 1.5
-  const mesaiUcret = mesaiHour * normalSaatlik * 1.5;
-  
+  // Günlük net = toplam net / 30 (sabit)
+  const gunlukNet = toplamNet / 30;
+  const mesaiSaatlik = toplamNet / (30 * normalHour);
+
+  // Kesinti tutarı
+  const kesintiTutar = toplamKesinti * gunlukNet;
+
+  // Mesai ücreti (net × 1.5)
+  const mesaiUcret = mesaiHour * mesaiSaatlik * 1.5;
+
   // Primler
   const primler = puan.primler || [];
   const toplamPrim = primler.reduce((s,p) => s + parseFloat(p.tutar||0), 0);
 
-  // Kesintiler: ücretsiz izin + devamsızlık
-  const kesinti = (ucrIzin + devamsiz) * normalGunluk;
-
-  const brutToplam = brutMaas + mesaiUcret + toplamPrim;
-  const netMaas = brutToplam - kesinti;
+  // Ödenecek net
+  const odenecekNet = toplamNet - kesintiTutar + mesaiUcret + toplamPrim + setcard + yolParasi;
 
   const body = document.getElementById('puantajBody');
   body.innerHTML = `
@@ -3252,12 +3357,12 @@ function renderPuantajBody() {
         <div class="puantaj-card-lbl">Mesai Saati</div>
       </div>
       <div class="puantaj-card">
-        <div class="puantaj-card-val" style="color:var(--red)">${hafIzin+ucrIzin+saglik}</div>
-        <div class="puantaj-card-lbl">İzin / Rapor</div>
+        <div class="puantaj-card-val" style="color:var(--red)">${toplamKesinti > 0 ? (toplamKesinti % 1 === 0 ? toplamKesinti : toplamKesinti.toFixed(1)) : 0}</div>
+        <div class="puantaj-card-lbl">Kesinti Günü</div>
       </div>
       <div class="puantaj-card">
-        <div class="puantaj-card-val" style="color:${netMaas>0?'#10b981':'var(--red)'}">${netMaas.toLocaleString('tr-TR',{maximumFractionDigits:0})}₺</div>
-        <div class="puantaj-card-lbl">Net Tahmin</div>
+        <div class="puantaj-card-val" style="color:${odenecekNet>0?'#10b981':'var(--red)'}">${odenecekNet.toLocaleString('tr-TR',{maximumFractionDigits:0})}₺</div>
+        <div class="puantaj-card-lbl">Ödenecek Net</div>
       </div>
     </div>
 
@@ -3281,26 +3386,37 @@ function renderPuantajBody() {
 
     <!-- MAAŞ AYARLARI -->
     <div class="salary-section">
-      <div class="salary-section-title">Maaş Ayarları</div>
+      <div class="salary-section-title">💰 Maaş Ayarları <span style="font-size:10px;color:var(--text3);font-weight:400">— her ay 30 gün sabit</span></div>
       <div class="salary-grid">
         <div class="salary-field">
-          <label class="salary-label">Hesaplama Yöntemi</label>
-          <select class="salary-input" id="hesapYontemi" onchange="onHesapYontemiChange()">
-            <option value="gunluk" ${hesapYontemi==='gunluk'?'selected':''}>Günlük (Maaş ÷ 22 × Gün)</option>
-            <option value="saatlik" ${hesapYontemi==='saatlik'?'selected':''}>Saatlik (Ücret × Saat)</option>
-          </select>
+          <label class="salary-label">Resmi Net Maaş (₺)</label>
+          <input class="salary-input" id="s_resmiNet" type="number" placeholder="0"
+            value="${puan.s_resmiNet ?? hr.maas ?? ''}" oninput="recalcSalary()">
         </div>
         <div class="salary-field">
-          <label class="salary-label">Aylık Brüt Maaş (₺)</label>
-          <input class="salary-input" id="s_maas" type="number" placeholder="0" value="${hr.maas||''}" oninput="recalcSalary()">
+          <label class="salary-label">Elden Net Maaş (₺)</label>
+          <input class="salary-input" id="s_eldenNet" type="number" placeholder="0"
+            value="${puan.s_eldenNet ?? hr.eldenmaas ?? ''}" oninput="recalcSalary()">
         </div>
-        <div class="salary-field" id="saatlikUcretField" style="${hesapYontemi==='saatlik'?'':'display:none'}">
-          <label class="salary-label">Saatlik Ücret (₺)</label>
-          <input class="salary-input" id="s_saatlikUcret" type="number" placeholder="0" value="${hr.saatlikUcret||''}" oninput="recalcSalary()">
+        <div class="salary-field">
+          <label class="salary-label">Setcard (₺/ay)</label>
+          <input class="salary-input" id="s_setcard" type="number" placeholder="0"
+            value="${puan.s_setcard ?? hr.setcard ?? ''}" oninput="recalcSalary()">
+        </div>
+        <div class="salary-field">
+          <label class="salary-label">Yol Parası (₺/ay)</label>
+          <input class="salary-input" id="s_yol" type="number" placeholder="0"
+            value="${puan.s_yol ?? hr.yol ?? ''}" oninput="recalcSalary()">
         </div>
         <div class="salary-field">
           <label class="salary-label">Günlük Normal Saat</label>
-          <input class="salary-input" id="s_gunlukSaat" type="number" placeholder="8" value="${hr.gunlukSaat||8}" min="1" max="12" oninput="recalcSalary()">
+          <input class="salary-input" id="s_gunlukSaat" type="number" placeholder="8"
+            value="${hr.gunlukSaat||8}" min="1" max="12" oninput="recalcSalary()">
+        </div>
+        <div class="salary-field" style="background:rgba(16,185,129,0.05);border:1px solid rgba(16,185,129,0.2);border-radius:8px;padding:8px">
+          <label class="salary-label" style="color:var(--green)">Günlük Net Ücret</label>
+          <div style="font-size:16px;font-weight:700;color:var(--green);font-family:'JetBrains Mono',monospace">${gunlukNet > 0 ? gunlukNet.toLocaleString('tr-TR',{maximumFractionDigits:2}) + ' ₺' : '—'}</div>
+          <div style="font-size:10px;color:var(--text3)">(Toplam net ÷ 30)</div>
         </div>
       </div>
     </div>
@@ -3333,27 +3449,49 @@ function renderPuantajBody() {
 
     <!-- MAAŞ HESABI -->
     <div class="salary-section">
-      <div class="salary-section-title">Maaş Hesabı — ${MONTHS_TR[puantajMonth]} ${puantajYear}</div>
+      <div class="salary-section-title">📊 Maaş Hesabı — ${MONTHS_TR[puantajMonth]} ${puantajYear}</div>
       <div id="salaryBreakdown">
         <div class="salary-total-row">
-          <span class="salary-total-lbl">Brüt Maaş (${calismaGun} gün × ${normalGunluk.toLocaleString('tr-TR',{maximumFractionDigits:0})}₺)</span>
-          <span class="salary-total-val">${brutMaas.toLocaleString('tr-TR',{maximumFractionDigits:0})}₺</span>
+          <span class="salary-total-lbl">Resmi Net Maaş (30 gün sabit)</span>
+          <span class="salary-total-val">${resmiNet.toLocaleString('tr-TR',{maximumFractionDigits:0})}₺</span>
         </div>
-        <div class="salary-total-row">
-          <span class="salary-total-lbl">Mesai (${mesaiHour.toFixed(1)}s × ₺${(normalSaatlik*1.5).toFixed(2)} × 1.5)</span>
+        ${eldenNet > 0 ? `<div class="salary-total-row">
+          <span class="salary-total-lbl">Elden Maaş</span>
+          <span class="salary-total-val">+${eldenNet.toLocaleString('tr-TR',{maximumFractionDigits:0})}₺</span>
+        </div>` : ''}
+        ${setcard > 0 ? `<div class="salary-total-row">
+          <span class="salary-total-lbl">Setcard</span>
+          <span class="salary-total-val" style="color:var(--accent)">+${setcard.toLocaleString('tr-TR',{maximumFractionDigits:0})}₺</span>
+        </div>` : ''}
+        ${yolParasi > 0 ? `<div class="salary-total-row">
+          <span class="salary-total-lbl">Yol Parası</span>
+          <span class="salary-total-val" style="color:var(--accent)">+${yolParasi.toLocaleString('tr-TR',{maximumFractionDigits:0})}₺</span>
+        </div>` : ''}
+        ${mesaiUcret > 0 ? `<div class="salary-total-row">
+          <span class="salary-total-lbl">Mesai (${mesaiHour.toFixed(1)}s × net ÷ 30saat × 1.5)</span>
           <span class="salary-total-val" style="color:var(--orange)">+${mesaiUcret.toLocaleString('tr-TR',{maximumFractionDigits:0})}₺</span>
-        </div>
-        <div class="salary-total-row">
-          <span class="salary-total-lbl">Toplam Prim (${primler.length} kalem)</span>
+        </div>` : ''}
+        ${toplamPrim > 0 ? `<div class="salary-total-row">
+          <span class="salary-total-lbl">Primler (${primler.length} kalem)</span>
           <span class="salary-total-val" style="color:var(--green)">+${toplamPrim.toLocaleString('tr-TR',{maximumFractionDigits:0})}₺</span>
-        </div>
-        <div class="salary-total-row">
-          <span class="salary-total-lbl">Kesinti (${ucrIzin} ücretsiz + ${devamsiz} devamsızlık × ${normalGunluk.toLocaleString('tr-TR',{maximumFractionDigits:0})}₺)</span>
-          <span class="salary-total-val" style="color:var(--red)">-${kesinti.toLocaleString('tr-TR',{maximumFractionDigits:0})}₺</span>
+        </div>` : ''}
+        ${kesintiTutar > 0 ? `<div class="salary-total-row">
+          <span class="salary-total-lbl">Kesinti (${toplamKesinti} gün × ${gunlukNet.toLocaleString('tr-TR',{maximumFractionDigits:0})}₺)
+            <span style="font-size:10px;color:var(--text3)">
+              ${izinSayilari.ucrsizizin ? ' ücretsiz:'+izinSayilari.ucrsizizin : ''}
+              ${izinSayilari.yarimgun ? ' yarım:'+izinSayilari.yarimgun : ''}
+              ${izinSayilari.devamsizlik ? ' devamsız:'+izinSayilari.devamsizlik : ''}
+            </span>
+          </span>
+          <span class="salary-total-val" style="color:var(--red)">-${kesintiTutar.toLocaleString('tr-TR',{maximumFractionDigits:0})}₺</span>
+        </div>` : ''}
+        <div class="salary-total-row" style="margin-top:4px;padding-top:12px;border-top:1px solid var(--border)">
+          <span style="font-size:13px;font-weight:600;color:var(--text2)">Toplam Net</span>
+          <span style="font-size:14px;font-weight:700">${toplamNet.toLocaleString('tr-TR',{maximumFractionDigits:0})}₺</span>
         </div>
         <div class="salary-total-row grand">
-          <span style="font-size:15px;font-weight:700">NET MAAŞ</span>
-          <span class="salary-total-val" style="font-size:18px;color:var(--green)">${netMaas.toLocaleString('tr-TR',{maximumFractionDigits:0})}₺</span>
+          <span style="font-size:15px;font-weight:700">ÖDENECEk NET</span>
+          <span class="salary-total-val" style="font-size:20px;color:var(--green)">${odenecekNet.toLocaleString('tr-TR',{maximumFractionDigits:0})}₺</span>
         </div>
       </div>
     </div>
@@ -3409,11 +3547,7 @@ function onTimeChange(inp) {
   puantajDraft = puan; // sadece hafızada tut
 }
 
-function onHesapYontemiChange() {
-  const v = document.getElementById('hesapYontemi').value;
-  document.getElementById('saatlikUcretField').style.display = v==='saatlik' ? '' : 'none';
-  recalcSalary();
-}
+function onHesapYontemiChange() { recalcSalary(); }
 
 function recalcSalary() {
   // Sadece ekranda hesabı güncelle, kaydetme — kaydet butonuyla olur
@@ -3445,9 +3579,15 @@ function savePuantajData() {
   puantajDraft = null; // draft'ı temizle
   // Maaş ayarlarını input'lardan oku ve kaydet
   const hr = getEmpHR(puantajEmpId);
-  ['maas','saatlikUcret','gunlukSaat'].forEach(f => {
+  ['gunlukSaat'].forEach(f => {
     const el = document.getElementById('s_' + f);
     if (el && el.value !== '') hr[f] = el.value;
+  });
+  // Net maaş alanlarını puantaj kaydında sakla
+  ['resmiNet','eldenNet','setcard','yol'].forEach(f => {
+    const el = document.getElementById('s_' + f);
+    if (el && el.value !== '') puan['s_' + f] = parseFloat(el.value);
+    else delete puan['s_' + f];
   });
   const hy = document.getElementById('hesapYontemi');
   if (hy) hr.hesapYontemi = hy.value;
