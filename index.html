@@ -1101,6 +1101,7 @@
     <button class="btn btn-ghost" onclick="showAutoAssign()">⚡ Otomatik Ata</button>
     <div id="syncStatus" style="font-size:11px;padding:4px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;min-width:160px;text-align:center">💾 Yerel</div>
     <div id="roleBadge" style="font-size:11px;padding:4px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;min-width:80px;text-align:center;cursor:pointer" onclick="handleRoleBadgeClick()">🔐 Giriş Yap</div>
+    <button class="btn btn-ghost" id="raporBtn" onclick="showRaporModal()" style="font-size:12px">📥 Rapor Al</button>
     <button class="btn btn-ghost" id="ayarlarBtn" onclick="openSettings()" style="display:none">⚙️ Ayarlar</button>
     <button class="btn btn-primary" id="calisanEkleBtn" onclick="addEmployee()" style="display:none">+ Çalışan Ekle</button>
   </div>
@@ -1111,11 +1112,15 @@
   <button class="tab-btn active" id="tabVardiya" onclick="switchTab('vardiya')">📅 Vardiya Programı</button>
   <button class="tab-btn" id="tabPersonnel" onclick="switchTab('personnel')">👥 Personel Özlük</button>
   <button class="tab-btn" id="tabPuantaj" onclick="switchTab('puantaj')">💰 Puantaj & Maaş</button>
+  <button class="tab-btn" id="tabEskiPersonel" onclick="switchTab('eskipersonel')">🗂️ Eski Personel</button>
   <button class="tab-btn" id="tabTakvim" onclick="switchTab('takvim')">📆 Takvim</button>
 </div>
 
 <!-- STATS BAR -->
 <div id="scheduleView">
+<div style="display:flex;justify-content:flex-end;padding:8px 24px 0">
+  <button class="btn btn-ghost" style="font-size:11px" onclick="exportExcel('vardiya')">📥 Excel</button>
+</div>
 <div class="stats-bar">
   <div class="stat-card">
     <div class="stat-icon" style="background:rgba(79,142,247,0.15)">👥</div>
@@ -1203,7 +1208,10 @@
   <div class="personnel-grid">
     <div class="personnel-list">
       <div class="personnel-list-header"><span>Çalışanlar</span><span id="empCountBadge"></span></div>
-      <input class="personnel-search" id="personnelSearch" placeholder="🔍 İsim veya lokasyon ara..." oninput="renderPersonnelList()">
+      <div style="display:flex;gap:8px;align-items:center">
+        <input class="personnel-search" id="personnelSearch" placeholder="🔍 İsim veya lokasyon ara..." oninput="renderPersonnelList()" style="flex:1">
+        <button class="btn btn-ghost" style="font-size:11px;white-space:nowrap" onclick="exportExcel('personel')">📥 Excel</button>
+      </div>
       <div class="personnel-list-body" id="personnelListBody"></div>
     </div>
     <div class="profile-card" id="profileCard">
@@ -1214,6 +1222,7 @@
 
 <!-- PUANTAJ VIEW -->
 <div id="puantajView" style="display:none;padding:24px 32px"></div>
+<div id="eskiPersonelView" style="display:none;padding:24px 32px"></div>
 
 <!-- TAKVIM VIEW -->
 <div id="takvimView" style="display:none;padding:24px 32px"></div>
@@ -1704,18 +1713,19 @@ function updateTabVisibility() {
   // Editor  → Vardiya + Takvim
   // Admin   → her şey
 
-  const tabPersonnel = document.getElementById('tabPersonnel');
-  const tabPuantaj   = document.getElementById('tabPuantaj');
-  const tabTakvim    = document.getElementById('tabTakvim');
+  const tabPersonnel    = document.getElementById('tabPersonnel');
+  const tabPuantaj      = document.getElementById('tabPuantaj');
+  const tabTakvim       = document.getElementById('tabTakvim');
+  const tabEskiPersonel = document.getElementById('tabEskiPersonel');
 
-  if (tabPersonnel) tabPersonnel.style.display = isAdmin() ? '' : 'none';
-  if (tabPuantaj)   tabPuantaj.style.display   = isAdmin() ? '' : 'none';
-  if (tabTakvim)    tabTakvim.style.display     = isEditor() ? '' : 'none';
+  if (tabPersonnel)    tabPersonnel.style.display    = isAdmin()  ? '' : 'none';
+  if (tabPuantaj)      tabPuantaj.style.display      = isAdmin()  ? '' : 'none';
+  if (tabTakvim)       tabTakvim.style.display       = isEditor() ? '' : 'none';
+  if (tabEskiPersonel) tabEskiPersonel.style.display = isAdmin()  ? '' : 'none';
 
-  // Admin-only sekmededysek vardiyaya dön (DOM hazırsa)
   if (!isAdmin() && typeof switchTab === 'function') {
     const cur = document.querySelector('.tab-btn.active')?.id;
-    if (cur === 'tabPersonnel' || cur === 'tabPuantaj') switchTab('vardiya');
+    if (cur === 'tabPersonnel' || cur === 'tabPuantaj' || cur === 'tabEskiPersonel') switchTab('vardiya');
   }
 
   // Butonlar
@@ -1898,7 +1908,7 @@ function render() {
   body.innerHTML = '';
 
   LOCATIONS.filter(loc => activeLocations.has(loc)).forEach(loc => {
-    const locEmps = employees.filter(e => e.loc === loc);
+    const locEmps = employees.filter(e => e.loc === loc && e.status !== 'pasif');
     if (!locEmps.length) return;
 
     // Location row
@@ -2230,7 +2240,7 @@ function updateSidebar() {
   occBox.innerHTML = `<div style="font-size:10px;color:var(--accent);margin-bottom:10px;text-align:right;font-weight:600">${isToday?'🔵 Bugün · ':'📅 '}${displayDayName} · ${displayDate} <span style="color:var(--text3);font-weight:400">(başlık sütununa tıkla)</span></div>`;
 
   LOCATIONS.filter(loc => activeLocations.has(loc)).forEach(loc => {
-    const locEmps = employees.filter(e => e.loc === loc);
+    const locEmps = employees.filter(e => e.loc === loc && e.status !== 'pasif');
     const total = locEmps.length;
     if (!total) return;
 
@@ -2394,7 +2404,7 @@ function updateSidebar() {
   });
 
   // Check: employees with no leave this week (only if week is well-planned: 4+ days entered)
-  employees.filter(e => activeLocations.has(e.loc)).forEach(emp => {
+  employees.filter(e => activeLocations.has(e.loc) && e.status !== 'pasif').forEach(emp => {
     const entries = week.dates.filter(d => getShift(emp.id, d) !== null);
     if (entries.length < 4) return;
     const hasLeave = entries.some(d => { const s = getShift(emp.id, d); return s && s.type === 'leave'; });
@@ -2598,13 +2608,87 @@ function saveEmpHR(empId, data) {
   } catch(e) { console.warn('HR kayıt hatası:', e); }
 }
 
+// İşten çıkarma modal
+function showIstenCikarModal(empId) {
+  const emp = employees.find(e => e.id === empId);
+  if (!emp) return;
+  // Modal oluştur
+  let m = document.getElementById('istenCikarModal');
+  if (!m) {
+    m = document.createElement('div');
+    m.id = 'istenCikarModal';
+    m.className = 'modal-overlay';
+    document.body.appendChild(m);
+  }
+  m.innerHTML = `
+    <div class="modal" style="width:440px">
+      <div class="modal-title">👋 İşten Çıkış — ${emp.name}</div>
+      <div class="form-group" style="margin-top:16px">
+        <label class="form-label">Çıkış Tarihi</label>
+        <input type="date" class="form-input" id="cikisTarihi" value="${new Date().toISOString().slice(0,10)}">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Çıkış Nedeni</label>
+        <select class="form-input" id="cikisNedeni">
+          <option value="istifa">İstifa</option>
+          <option value="isten_cikarma">İşten Çıkarma</option>
+          <option value="anlasma">Karşılıklı Anlaşma</option>
+          <option value="emeklilik">Emeklilik</option>
+          <option value="sozlesme_bitis">Sözleşme Bitişi</option>
+          <option value="diger">Diğer</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Açıklama (opsiyonel)</label>
+        <input type="text" class="form-input" id="cikisAciklama" placeholder="Ek bilgi...">
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="document.getElementById('istenCikarModal').classList.remove('open')">İptal</button>
+        <button class="btn" style="background:#ef4444;color:white" onclick="confirmIstenCikar(${empId})">✅ Çıkışı Onayla</button>
+      </div>
+    </div>`;
+  m.classList.add('open');
+}
+
+function confirmIstenCikar(empId) {
+  const emp = employees.find(e => e.id === empId);
+  if (!emp) return;
+  const tarih   = document.getElementById('cikisTarihi').value;
+  const neden   = document.getElementById('cikisNedeni').value;
+  const aciklama= document.getElementById('cikisAciklama').value;
+
+  // Personeli pasife al
+  emp.status = 'pasif';
+  emp.cikisTarihi = tarih;
+  emp.cikisNedeni = neden;
+  emp.cikisAciklama = aciklama;
+
+  document.getElementById('istenCikarModal').classList.remove('open');
+  closeDrawer();
+  saveData();
+  render();
+  renderPersonnelList();
+  showCloudToast(`👋 ${emp.name} işten çıkış yapıldı`);
+}
+
+function reaktifEt(empId) {
+  const emp = employees.find(e => e.id === empId);
+  if (!emp) return;
+  if (!confirm(`"${emp.name}" tekrar aktif edilsin mi?`)) return;
+  emp.status = 'aktif';
+  delete emp.cikisTarihi;
+  delete emp.cikisNedeni;
+  delete emp.cikisAciklama;
+  saveData();
+  renderEskiPersonel();
+  showCloudToast(`✅ ${emp.name} tekrar aktif edildi`);
+}
+
 function deleteEmployee(empId) {
   const emp = employees.find(e => e.id === empId);
   if (!emp) return;
-  if (!confirm(`"${emp.name}" adlı çalışanı silmek istediğinizden emin misiniz?\nTüm vardiya kayıtları da silinecektir.`)) return;
-  // Remove from employees
+  if (!confirm(`"${emp.name}" adlı çalışanı kalıcı olarak silmek istediğinizden emin misiniz?\nBu işlem geri alınamaz.`)) return;
   employees = employees.filter(e => e.id !== empId);
-  // Remove from all shifts
   Object.keys(shifts).forEach(wIdx => {
     delete shifts[Number(wIdx)][empId];
   });
@@ -2627,11 +2711,13 @@ function deleteEmployee(empId) {
 }
 
 function switchTab(tab) {
-  document.getElementById('scheduleView').style.display   = tab==='vardiya'   ? '' : 'none';
-  document.getElementById('personnelView').style.display  = tab==='personnel'  ? 'block' : 'none';
-  document.getElementById('puantajView').style.display    = tab==='puantaj'    ? 'block' : 'none';
-  document.getElementById('takvimView').style.display     = tab==='takvim'     ? 'block' : 'none';
-  ['tabVardiya','tabPersonnel','tabPuantaj','tabTakvim'].forEach((id,i) => {
+  document.getElementById('scheduleView').style.display      = tab==='vardiya'      ? '' : 'none';
+  document.getElementById('personnelView').style.display     = tab==='personnel'     ? 'block' : 'none';
+  document.getElementById('puantajView').style.display       = tab==='puantaj'       ? 'block' : 'none';
+  document.getElementById('eskiPersonelView').style.display  = tab==='eskipersonel'  ? 'block' : 'none';
+  document.getElementById('takvimView').style.display        = tab==='takvim'        ? 'block' : 'none';
+  if (tab === 'eskipersonel') renderEskiPersonel();
+  ['tabVardiya','tabPersonnel','tabPuantaj','tabEskiPersonel','tabTakvim'].forEach((id,i) => {
     document.getElementById(id).classList.toggle('active', ['vardiya','personnel','puantaj','takvim'][i]===tab);
   });
   if (tab==='personnel') renderPersonnelList();
@@ -2643,7 +2729,8 @@ function renderPersonnelList() {
   const query = (document.getElementById('personnelSearch')?.value || '').toUpperCase();
   const body = document.getElementById('personnelListBody');
   const filtered = employees.filter(e =>
-    e.name.includes(query) || e.loc.includes(query)
+    e.status !== 'pasif' &&
+    (e.name.includes(query) || e.loc.includes(query))
   );
   document.getElementById('empCountBadge').textContent = filtered.length + ' kişi';
   body.innerHTML = filtered.map(emp => {
@@ -2933,6 +3020,236 @@ function addIzinModal(empId) {
   renderProfile(empId);
 }
 
+
+
+
+
+function showRaporModal() {
+  let m = document.getElementById('raporModal');
+  if (!m) {
+    m = document.createElement('div');
+    m.id = 'raporModal';
+    m.className = 'modal-overlay';
+    document.body.appendChild(m);
+  }
+  m.innerHTML = `
+    <div class="modal" style="width:400px">
+      <div class="modal-title">📥 Rapor Al</div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:16px">
+        <button class="btn btn-ghost" style="justify-content:flex-start;gap:10px;padding:12px 16px" onclick="exportExcel('vardiya');document.getElementById('raporModal').classList.remove('open')">
+          📅 <div style="text-align:left"><div style="font-weight:600">Vardiya Programı</div><div style="font-size:11px;color:var(--text3)">Mevcut hafta vardiya tablosu</div></div>
+        </button>
+        <button class="btn btn-ghost" style="justify-content:flex-start;gap:10px;padding:12px 16px" onclick="exportExcel('personel');document.getElementById('raporModal').classList.remove('open')">
+          👥 <div style="text-align:left"><div style="font-weight:600">Personel Özlük</div><div style="font-size:11px;color:var(--text3)">Tüm aktif personel bilgileri</div></div>
+        </button>
+        <button class="btn btn-ghost" style="justify-content:flex-start;gap:10px;padding:12px 16px" onclick="exportExcel('puantaj');document.getElementById('raporModal').classList.remove('open')">
+          💰 <div style="text-align:left"><div style="font-weight:600">Puantaj & Maaş</div><div style="font-size:11px;color:var(--text3)">${MONTHS_TR[puantajMonth]} ${puantajYear} puantaj tablosu</div></div>
+        </button>
+        <button class="btn btn-ghost" style="justify-content:flex-start;gap:10px;padding:12px 16px" onclick="exportExcel('tumliste');document.getElementById('raporModal').classList.remove('open')">
+          📋 <div style="text-align:left"><div style="font-weight:600">Tüm Personel Listesi</div><div style="font-size:11px;color:var(--text3)">Aktif + ayrılan tüm personel</div></div>
+        </button>
+        <button class="btn btn-ghost" style="justify-content:flex-start;gap:10px;padding:12px 16px" onclick="exportExcel('eskipersonel');document.getElementById('raporModal').classList.remove('open')">
+          🗂️ <div style="text-align:left"><div style="font-weight:600">Eski Personel</div><div style="font-size:11px;color:var(--text3)">Ayrılan personel & kıdem tazminatı</div></div>
+        </button>
+      </div>
+      <div class="modal-footer" style="margin-top:16px">
+        <button class="btn btn-ghost" onclick="document.getElementById('raporModal').classList.remove('open')">Kapat</button>
+      </div>
+    </div>`;
+  m.classList.add('open');
+}
+// ============================================================
+// EXCEL EXPORT
+// ============================================================
+async function exportExcel(tip) {
+  // SheetJS CDN'den yükle
+  if (!window.XLSX) {
+    await new Promise((res, rej) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+      s.onload = res; s.onerror = rej;
+      document.head.appendChild(s);
+    });
+  }
+  const wb = XLSX.utils.book_new();
+
+  if (tip === 'vardiya') {
+    // Mevcut hafta vardiya programı
+    const week = getWeekByOffset(currentWeekOffset);
+    const dates = week.dates; // ['2026-03-09', ...]
+    const header = ['Personel', 'Lokasyon', ...dates.map(ds => {
+      const dt = new Date(ds + 'T00:00:00');
+      return dt.toLocaleDateString('tr-TR', {weekday:'short', day:'2-digit', month:'2-digit'});
+    })];
+    const rows = [header];
+    const aktifEmps = employees.filter(e => e.status !== 'pasif' && activeLocations.has(e.loc));
+    aktifEmps.forEach(emp => {
+      const row = [emp.name, emp.loc];
+      dates.forEach(ds => {
+        const s = (shifts[week.weekKey]?.[emp.id]?.[ds]);
+        row.push(s ? s.start + '-' + s.end : '');
+      });
+      rows.push(row);
+    });
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    XLSX.utils.book_append_sheet(wb, ws, 'Vardiya Programı');
+
+  } else if (tip === 'personel') {
+    const rows = [['Ad Soyad','Lokasyon','Pozisyon','TC No','Doğum','Telefon','E-posta','Giriş Tarihi','SGK Başlangıcı','Sözleşme','Resmi Net','Elden Net','Setcard','Yol']];
+    employees.filter(e => e.status !== 'pasif').forEach(emp => {
+      const hr = getEmpHR(emp.id);
+      rows.push([emp.name, emp.loc, hr.pozisyon||'', hr.tc||'', hr.dogum||'', hr.tel||'', hr.email||'',
+        hr.giristarihi||'', hr.sgkbaslangic||'', hr.sozlesme||'',
+        hr.maas||'', hr.eldenmaas||'', hr.setcard||'', hr.yol||'']);
+    });
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    XLSX.utils.book_append_sheet(wb, ws, 'Personel Özlük');
+
+  } else if (tip === 'puantaj') {
+    const ay = MONTHS_TR[puantajMonth] + ' ' + puantajYear;
+    const daysInMonth = new Date(puantajYear, puantajMonth+1, 0).getDate();
+    const header = ['Ad Soyad', 'Lokasyon', ...Array.from({length:daysInMonth},(_,i)=>i+1), 'Çalışma Günü', 'Kesinti', 'Ödenecek Net'];
+    const rows = [header];
+    employees.filter(e => e.status !== 'pasif').forEach(emp => {
+      const hr = getEmpHR(emp.id);
+      const puan = loadPuantaj(emp.id, puantajYear, puantajMonth);
+      const dayData = puan.days || {};
+      let calisma = 0, kesinti = 0;
+      const dayCells = [];
+      for (let d = 1; d <= daysInMonth; d++) {
+        const date = new Date(puantajYear, puantajMonth, d);
+        const isWE = date.getDay()===0||date.getDay()===6;
+        const status = dayData[d]?.status || (isWE?'bosta':'calisma');
+        const st = DAY_STATUS[status];
+        dayCells.push(st?.label || status);
+        if (status === 'calisma') calisma++;
+        if (st?.kesinti) kesinti += st.kesinti;
+      }
+      const net = parseFloat(puan.s_resmiNet||hr.maas||0) + parseFloat(puan.s_eldenNet||hr.eldenmaas||0);
+      const odenen = net - (kesinti * net/30);
+      rows.push([emp.name, emp.loc, ...dayCells, calisma, kesinti, Math.round(odenen)]);
+    });
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    XLSX.utils.book_append_sheet(wb, ws, 'Puantaj ' + ay);
+
+  } else if (tip === 'eskipersonel') {
+    const rows = [['Ad Soyad','Lokasyon','Pozisyon','Çıkış Tarihi','Çıkış Nedeni','Açıklama','Çalışma Süresi (yıl)','Kıdem Tazminatı (₺)']];
+    employees.filter(e => e.status === 'pasif').forEach(emp => {
+      const hr = getEmpHR(emp.id);
+      const kidem = hesaplaKidemTazminati(emp, hr);
+      rows.push([emp.name, emp.loc, hr.pozisyon||'', emp.cikisTarihi||'',
+        CIKIS_NEDEN_LABEL[emp.cikisNedeni]||emp.cikisNedeni||'', emp.cikisAciklama||'',
+        kidem?.yil||'', kidem?.tutar||0]);
+    });
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    XLSX.utils.book_append_sheet(wb, ws, 'Eski Personel');
+
+  } else if (tip === 'tumliste') {
+    // Aktif personel
+    const rows1 = [['Ad Soyad','Lokasyon','Pozisyon','Giriş Tarihi','Telefon','Resmi Net','Elden Net']];
+    employees.filter(e => e.status !== 'pasif').forEach(emp => {
+      const hr = getEmpHR(emp.id);
+      rows1.push([emp.name, emp.loc, hr.pozisyon||'', hr.giristarihi||'', hr.tel||'', hr.maas||'', hr.eldenmaas||'']);
+    });
+    const ws1 = XLSX.utils.aoa_to_sheet(rows1);
+    XLSX.utils.book_append_sheet(wb, ws1, 'Aktif Personel');
+    // Ayrılan personel
+    const rows2 = [['Ad Soyad','Lokasyon','Çıkış Tarihi','Çıkış Nedeni']];
+    employees.filter(e => e.status === 'pasif').forEach(emp => {
+      rows2.push([emp.name, emp.loc, emp.cikisTarihi||'', CIKIS_NEDEN_LABEL[emp.cikisNedeni]||'']);
+    });
+    const ws2 = XLSX.utils.aoa_to_sheet(rows2);
+    XLSX.utils.book_append_sheet(wb, ws2, 'Ayrılan Personel');
+  }
+
+  const wlEl = document.getElementById('weekLabel');
+  const wlText = wlEl ? wlEl.textContent.replace(/[^a-zA-Z0-9\u00C0-\u024F]/g,'_') : 'Hafta';
+  const dosyaAdi = {
+    vardiya: 'DUAL_Vardiya_' + wlText,
+    personel: 'DUAL_Personel_Ozluk',
+    puantaj:  'DUAL_Puantaj_' + MONTHS_TR[puantajMonth] + '_' + puantajYear,
+    eskipersonel: 'DUAL_Eski_Personel',
+    tumliste: 'DUAL_Tum_Personel_Listesi',
+  }[tip] || 'DUAL_Rapor';
+
+  XLSX.writeFile(wb, dosyaAdi + '.xlsx');
+  showCloudToast('📥 Excel raporu indirildi');
+}
+
+// ============================================================
+// ESKİ PERSONEL
+// ============================================================
+const CIKIS_NEDEN_LABEL = {
+  istifa: 'İstifa', isten_cikarma: 'İşten Çıkarma',
+  anlasma: 'Karşılıklı Anlaşma', emeklilik: 'Emeklilik',
+  sozlesme_bitis: 'Sözleşme Bitişi', diger: 'Diğer'
+};
+
+function hesaplaKidemTazminati(emp, hr) {
+  // Kıdem tazminatı: her tam yıl için 30 günlük brüt ücret
+  // Net üzerinden yapıyoruz: resmi net / 30 * 30 * yıl
+  const giris  = hr.sgkbaslangic || hr.giristarihi;
+  const cikis  = emp.cikisTarihi || new Date().toISOString().slice(0,10);
+  if (!giris) return null;
+  const bas    = new Date(giris);
+  const bit    = new Date(cikis);
+  const yil    = (bit - bas) / (365.25 * 24 * 3600 * 1000);
+  if (yil < 1) return { yil: yil.toFixed(1), tutar: 0, neden: '1 yılı doldurmadı' };
+  const tamYil = Math.floor(yil);
+  const resmiNet = parseFloat(hr.maas || 0);
+  const tutar  = tamYil * resmiNet; // her tam yıl için 1 aylık ücret
+  return { yil: yil.toFixed(1), tamYil, tutar };
+}
+
+function renderEskiPersonel() {
+  const view = document.getElementById('eskiPersonelView');
+  if (!view) return;
+  const pasifler = employees.filter(e => e.status === 'pasif');
+
+  view.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <div>
+        <div style="font-size:18px;font-weight:700">🗂️ Eski Personel</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:2px">${pasifler.length} ayrılmış çalışan</div>
+      </div>
+      <button class="btn btn-ghost" style="font-size:12px" onclick="exportExcel('eskipersonel')">📥 Excel İndir</button>
+    </div>
+    ${pasifler.length === 0
+      ? '<div style="text-align:center;padding:60px;color:var(--text3)">Henüz ayrılmış personel yok</div>'
+      : `<div style="display:flex;flex-direction:column;gap:12px">
+          ${pasifler.map(emp => {
+            const hr = getEmpHR(emp.id);
+            const kidem = hesaplaKidemTazminati(emp, hr);
+            return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px">
+              <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+                <div style="display:flex;align-items:center;gap:12px">
+                  <div class="emp-badge" style="width:44px;height:44px;line-height:44px;font-size:14px;background:rgba(239,68,68,0.15);color:#ef4444">${initials(emp.name)}</div>
+                  <div>
+                    <div style="font-size:15px;font-weight:700">${emp.name}</div>
+                    <div style="font-size:12px;color:var(--text2)">${emp.loc}${hr.pozisyon ? ' · '+hr.pozisyon : ''}</div>
+                    <div style="display:flex;gap:8px;margin-top:4px;flex-wrap:wrap">
+                      ${emp.cikisTarihi ? `<span style="font-size:11px;background:rgba(239,68,68,0.1);color:#ef4444;padding:2px 8px;border-radius:6px">📅 Çıkış: ${emp.cikisTarihi}</span>` : ''}
+                      ${emp.cikisNedeni ? `<span style="font-size:11px;background:rgba(245,158,11,0.1);color:var(--orange);padding:2px 8px;border-radius:6px">${CIKIS_NEDEN_LABEL[emp.cikisNedeni]||emp.cikisNedeni}</span>` : ''}
+                      ${emp.cikisAciklama ? `<span style="font-size:11px;color:var(--text3)">${emp.cikisAciklama}</span>` : ''}
+                    </div>
+                  </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:16px">
+                  ${kidem ? `<div style="text-align:right">
+                    <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px">Kıdem Tazminatı</div>
+                    <div style="font-size:16px;font-weight:700;color:${kidem.tutar>0?'var(--green)':'var(--text3)'}">
+                      ${kidem.tutar > 0 ? kidem.tutar.toLocaleString('tr-TR') + ' ₺' : kidem.neden}
+                    </div>
+                    <div style="font-size:10px;color:var(--text3)">${kidem.yil} yıl çalışma${kidem.tamYil ? ' ('+kidem.tamYil+' tam yıl)' : ''}</div>
+                  </div>` : ''}
+                  <button class="btn btn-ghost" style="font-size:11px;color:var(--green);border-color:rgba(16,185,129,0.3)" onclick="reaktifEt(${emp.id})">↩️ Aktife Al</button>
+                </div>
+              </div>
+            </div>`;
+          }).join('')}
+        </div>`
+    }`;
+}
 
 // ============================================================
 // EMPLOYEE DRAWER
@@ -3269,6 +3586,7 @@ function renderPuantajDetail() {
     <div class="puantaj-body" id="puantajBody"></div>
     <div class="puantaj-footer">
       <button class="btn btn-ghost" style="flex:1" onclick="importFromVardiya()">📅 Vardiyadan Aktar</button>
+      <button class="btn btn-ghost" style="flex:1" onclick="exportExcel('puantaj')">📥 Excel</button>
       <button class="btn btn-primary" style="flex:2" onclick="savePuantajData()">💾 Kaydet & Hesapla</button>
     </div>`;
 
@@ -4571,7 +4889,7 @@ initApp();
   </div>
   <div class="drawer-body" id="drawerBody"></div>
   <div class="drawer-footer">
-    <button class="btn btn-ghost" style="flex:0 0 auto;color:var(--red);border-color:rgba(239,68,68,0.3)" onclick="deleteEmployee(drawerEmpId)">🗑️ Sil</button>
+    <button class="btn btn-ghost" style="flex:0 0 auto;color:var(--red);border-color:rgba(239,68,68,0.3)" onclick="showIstenCikarModal(drawerEmpId)">👋 İşten Çıkar</button>
     <button class="btn btn-ghost" style="flex:1" onclick="closeDrawer()">Kapat</button>
     <button class="btn btn-primary" style="flex:2" onclick="saveDrawerProfile()">💾 Kaydet</button>
   </div>
