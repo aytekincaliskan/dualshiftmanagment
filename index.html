@@ -2572,6 +2572,8 @@ function saveEmpHR(empId, data) {
     if (!saved.hr) saved.hr = {};
     saved.hr[empId] = { ...(saved.hr[empId] || {}), ...data };
     localStorage.setItem(LS_KEY, JSON.stringify(saved));
+    // HR verisini Supabase'e de kaydet (kaybolmasın)
+    sbSave(saved).then(() => setSyncStatus('ok')).catch(() => setSyncStatus('offline'));
     showSaveToast();
   } catch(e) { console.warn('HR kayıt hatası:', e); }
 }
@@ -2698,7 +2700,18 @@ function renderProfile(empId) {
           </div>
           <div class="profile-field">
             <label class="profile-field-label">Telefon</label>
-            <input class="profile-input" id="pf_tel" placeholder="05xx xxx xx xx" value="${hr.tel||''}">
+            <input class="profile-input" id="pf_tel" placeholder="0xxx xxx xx xx" 
+              value="${hr.tel||''}" maxlength="14" inputmode="numeric"
+              oninput="
+                let v = this.value.replace(/\D/g,'');
+                if (v.length > 11) v = v.slice(0,11);
+                let fmt = '';
+                if (v.length <= 4) fmt = v;
+                else if (v.length <= 7) fmt = v.slice(0,4)+' '+v.slice(4);
+                else if (v.length <= 9) fmt = v.slice(0,4)+' '+v.slice(4,7)+' '+v.slice(7);
+                else fmt = v.slice(0,4)+' '+v.slice(4,7)+' '+v.slice(7,9)+' '+v.slice(9);
+                this.value = fmt;
+              ">
           </div>
           <div class="profile-field">
             <label class="profile-field-label">E-posta</label>
