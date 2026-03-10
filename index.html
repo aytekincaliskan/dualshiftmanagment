@@ -2567,6 +2567,20 @@ let selectedEmpId = null;
 // HR verisi AYRI key'de — cloud polling asla dokunamaz
 const HR_KEY = 'dual_hr_v1';
 
+// Eski key'den yeni key'e bir kez migrate et
+(function migrateHR() {
+  try {
+    if (localStorage.getItem(HR_KEY)) return; // zaten migrate edilmiş
+    const old = JSON.parse(localStorage.getItem('vardiyapro_v1') || '{}');
+    if (old.hr && Object.keys(old.hr).length > 0) {
+      localStorage.setItem(HR_KEY, JSON.stringify(old.hr));
+      console.log('HR verisi yeni key\'e migrate edildi:', Object.keys(old.hr).length, 'personel');
+    } else {
+      localStorage.setItem(HR_KEY, '{}'); // boş da olsa işaretle
+    }
+  } catch(e) {}
+})();
+
 function getEmpHR(empId) {
   try {
     const all = JSON.parse(localStorage.getItem(HR_KEY) || '{}');
@@ -2860,14 +2874,20 @@ function renderKidemBox(empId, hr) {
 }
 
 function saveProfile(empId) {
-  const fields = ['tc','dogum','tel','email','adres','giristarihi','sgkbaslangic','sgk',
-                  'maas','eldenmaas','setcard','yol',
-                  'sozlesme','pozisyon','departman','yillikIzin','kullanilanIzin','notlar'];
+  // field_key: input_id_suffix şeklinde map — id uyuşmayanlar için
+  const fieldMap = {
+    tc:'tc', dogum:'dogum', tel:'tel', email:'email', adres:'adres',
+    giristarihi:'giris',        // pf_giris → giristarihi
+    sgkbaslangic:'sgkbaslangic',
+    sgk:'sgk', maas:'maas', eldenmaas:'eldenmaas', setcard:'setcard', yol:'yol',
+    sozlesme:'sozlesme', pozisyon:'pozisyon', departman:'departman',
+    yillikIzin:'yillikIzin', kullanilanIzin:'kullanilanIzin', notlar:'notlar'
+  };
   const existing = getEmpHR(empId);
-  const data = { ...existing }; // mevcut tüm veriyi koru, üzerine yaz
-  fields.forEach(f => {
-    const el = document.getElementById('pf_' + f);
-    if (el) data[f] = el.value; // sadece DOM'da olan alanları güncelle
+  const data = { ...existing }; // mevcut tüm veriyi koru
+  Object.entries(fieldMap).forEach(([key, idSuffix]) => {
+    const el = document.getElementById('pf_' + idSuffix);
+    if (el) data[key] = el.value;
   });
   data.izinGecmisi = existing.izinGecmisi || [];
   // kıdem/izin hakkını otomatik hesapla
