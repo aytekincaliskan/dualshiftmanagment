@@ -1590,6 +1590,7 @@ async function reloadFromCloud() {
     ...cloudData,
     storeHours: cloudData.storeHours || existing.storeHours || {},
     puantaj:    cloudData.puantaj    || existing.puantaj    || {},
+    hr:         { ...(existing.hr || {}), ...(cloudData.hr || {}) },
   };
   localStorage.setItem(LS_KEY, JSON.stringify(merged));
   LOCATIONS = merged.locations;
@@ -4352,6 +4353,7 @@ async function loadCloudData() {
         ...cloudData,
         storeHours: cloudData.storeHours || localRaw.storeHours || {},
         puantaj:    cloudData.puantaj    || localRaw.puantaj    || {},
+        hr:         { ...(localRaw.hr || {}), ...(cloudData.hr || {}) },
       };
       localStorage.setItem(LS_KEY, JSON.stringify(merged));
       LOCATIONS       = merged.locations;
