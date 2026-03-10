@@ -2563,6 +2563,52 @@ function deleteLocation(loc) {
 }
 
 
+async function hrBulutaKaydet() {
+  const log = document.getElementById('yukleLog');
+  log.textContent = '⏳ Yükleniyor...';
+  try {
+    const localHR = JSON.parse(localStorage.getItem(HR_KEY) || '{}');
+    const count = Object.keys(localHR).length;
+    if (count === 0) { log.textContent = '⚠️ Yüklenecek veri yok.'; return; }
+
+    // Mevcut cloud veriyi çek
+    const res = await fetch(SB_URL + '/rest/v1/vardiya_data?id=eq.' + SB_RECORD_ID + '&select=data', {
+      headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY }
+    });
+    const rows = await res.json();
+    if (!rows || !rows.length) { log.textContent = '❌ Cloud verisi alınamadı.'; return; }
+    const cloudData = rows[0].data;
+
+    // HR'ı güncelle — local öncelikli
+    cloudData.hr = { ...(cloudData.hr || {}), ...localHR };
+
+    // Geri yaz
+    const save = await fetch(SB_URL + '/rest/v1/vardiya_data?id=eq.' + SB_RECORD_ID, {
+      method: 'PATCH',
+      headers: {
+        'apikey': SB_KEY,
+        'Authorization': 'Bearer ' + SB_KEY,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({ data: cloudData })
+    });
+
+    if (save.status === 204 || save.ok) {
+      log.textContent = '✅ ' + count + ' personelin verisi buluta kaydedildi!\n' +
+        Object.entries(localHR).map(([id, hr]) => {
+          const emp = employees.find(e => e.id == id);
+          return '  · ' + (emp ? emp.name : 'ID:' + id) + (hr.maas ? ' ✓' : '');
+        }).join('\n');
+      showCloudToast('✅ HR verileri buluta kaydedildi');
+    } else {
+      log.textContent = '❌ Hata: ' + save.status;
+    }
+  } catch(e) {
+    log.textContent = '❌ Hata: ' + e.message;
+  }
+}
+
 function kurtarHRdenBulut() {
   const log = document.getElementById('kurtarmaLog');
   log.textContent = 'Supabase\'e bağlanıyor...';
@@ -2622,40 +2668,45 @@ let selectedEmpId = null;
 // HR verisi AYRI key'de — cloud polling asla dokunamaz
 const HR_KEY = 'dual_hr_v1';
 
-// Eski key'den yeni key'e migrate et + Supabase'den de çek
+// Supabase'den alınan HR verisi — sabit seed (kaybolmaya karşı)
+const SEED_HR = {
+  "1": {
+    "tc": "30280804982", "sgk": "", "tel": "0(530)4637953",
+    "yol": "3000", "maas": "30000", "adres": "", "dogum": "1996-01-01",
+    "email": "", "notlar": "", "setcard": "12000", "pozisyon": "Personel",
+    "sozlesme": "", "departman": "Mağaza", "eldenmaas": "2000",
+    "izinGecmisi": [], "sgkbaslangic": "2025-10-06"
+  }
+};
+
 (function migrateHR() {
   try {
-    // 1. Önce eski localStorage key'inden bak
     const oldMain = JSON.parse(localStorage.getItem('vardiyapro_v1') || '{}');
     const oldHR = oldMain.hr || {};
     const curHR = JSON.parse(localStorage.getItem(HR_KEY) || '{}');
 
-    // Eski key'de veri varsa ve yeni key boşsa → taşı
-    if (Object.keys(oldHR).length > 0 && Object.keys(curHR).length === 0) {
-      localStorage.setItem(HR_KEY, JSON.stringify(oldHR));
-      console.log('[HR Migration] localStorage\'dan taşındı:', Object.keys(oldHR).length, 'personel');
-      return;
-    }
+    // Seed veriyi her zaman base olarak koy (mevcut veri varsa üzerine yaz değil, eksikleri tamamla)
+    const merged = { ...SEED_HR, ...oldHR, ...curHR };
 
-    // 2. Her iki key de boşsa → Supabase'den çek
+    // Supabase'den çek ve birleştir
+    fetch(SB_URL + '/rest/v1/vardiya_data?id=eq.' + SB_RECORD_ID + '&select=data', {
+      headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY }
+    }).then(r => r.json()).then(rows => {
+      const cloudHR = (rows && rows[0]?.data?.hr) || {};
+      // Cloud + seed + local: local her zaman kazanır
+      const final = { ...SEED_HR, ...cloudHR, ...curHR };
+      localStorage.setItem(HR_KEY, JSON.stringify(final));
+      console.log('[HR] Yüklendi:', Object.keys(final).length, 'personel');
+    }).catch(() => {
+      // Offline: seed + local
+      localStorage.setItem(HR_KEY, JSON.stringify(merged));
+    });
+
+    // Hemen seed'i yaz (cloud gelmeden önce de çalışsın)
     if (Object.keys(curHR).length === 0) {
-      console.log('[HR Migration] Her iki key boş, Supabase\'den çekiliyor...');
-      fetch(SB_URL + '/rest/v1/vardiya_data?id=eq.' + SB_RECORD_ID + '&select=data', {
-        headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY }
-      }).then(r => r.json()).then(rows => {
-        if (!rows || !rows.length) return;
-        const cloudHR = rows[0].data?.hr || {};
-        if (Object.keys(cloudHR).length > 0) {
-          localStorage.setItem(HR_KEY, JSON.stringify(cloudHR));
-          console.log('[HR Migration] Supabase\'den kurtarıldı:', Object.keys(cloudHR).length, 'personel');
-          // Eğer personel özlük ekranı açıksa yenile
-          if (typeof renderPersonnelList === 'function') renderPersonnelList();
-          if (typeof renderPuantajBody === 'function' && puantajEmpId) renderPuantajBody();
-          showCloudToast('✅ Özlük verileri buluttan kurtarıldı: ' + Object.keys(cloudHR).length + ' personel');
-        }
-      }).catch(e => console.warn('[HR Migration] Supabase erişim hatası:', e));
+      localStorage.setItem(HR_KEY, JSON.stringify(merged));
     }
-  } catch(e) { console.warn('[HR Migration] Hata:', e); }
+  } catch(e) { console.warn('[HR Migration]', e); }
 })();
 
 function getEmpHR(empId) {
@@ -2671,7 +2722,30 @@ function saveEmpHR(empId, data) {
     all[empId] = { ...(all[empId] || {}), ...data };
     localStorage.setItem(HR_KEY, JSON.stringify(all));
     showSaveToast();
-    setSyncStatus('ok');
+    setSyncStatus('syncing');
+    // Supabase'e de yaz — HR artık cloud'da da kalıcı
+    (async () => {
+      try {
+        const res = await fetch(SB_URL + '/rest/v1/vardiya_data?id=eq.' + SB_RECORD_ID + '&select=data', {
+          headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY }
+        });
+        const rows = await res.json();
+        if (!rows || !rows.length) return;
+        const cloudData = rows[0].data || {};
+        cloudData.hr = all; // tüm HR'ı yaz
+        const save = await fetch(SB_URL + '/rest/v1/vardiya_data?id=eq.' + SB_RECORD_ID, {
+          method: 'PATCH',
+          headers: {
+            'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY,
+            'Content-Type': 'application/json', 'Prefer': 'return=minimal'
+          },
+          body: JSON.stringify({ data: cloudData })
+        });
+        setSyncStatus(save.ok || save.status===204 ? 'ok' : 'error');
+        // polling'in bu değişikliği geri getirmemesi için updated_at güncelle
+        lastUpdatedAt = null;
+      } catch(e) { setSyncStatus('error'); }
+    })();
   } catch(e) { console.warn('HR kayıt hatası:', e); }
 }
 
@@ -2751,30 +2825,51 @@ function reaktifEt(empId) {
   showCloudToast(`✅ ${emp.name} tekrar aktif edildi`);
 }
 
+function kaliciSil(empId) {
+  const emp = employees.find(e => e.id === empId);
+  if (!emp) return;
+  // Çift onay — kritik işlem
+  if (!confirm(`⚠️ "${emp.name}" kalıcı olarak silinecek.\n\nTüm vardiya ve özlük verileri de silinecektir.\nBu işlem GERİ ALINAMAZ!\n\nEmin misiniz?`)) return;
+  if (!confirm(`Son onay: "${emp.name}" silinsin mi?`)) return;
+  deleteEmployee(empId);
+}
+
 function deleteEmployee(empId) {
   const emp = employees.find(e => e.id === empId);
   if (!emp) return;
-  if (!confirm(`"${emp.name}" adlı çalışanı kalıcı olarak silmek istediğinizden emin misiniz?\nBu işlem geri alınamaz.`)) return;
+  const empName = emp.name;
+  // Listeden çıkar
   employees = employees.filter(e => e.id !== empId);
-  Object.keys(shifts).forEach(wIdx => {
-    delete shifts[Number(wIdx)][empId];
+  // Vardiya kayıtlarını sil
+  Object.keys(shifts).forEach(wKey => {
+    if (shifts[wKey]) delete shifts[wKey][empId];
   });
-  // Remove HR data
+  // Eski LS_KEY'deki HR ve puantaj verisi
   try {
     const raw = localStorage.getItem(LS_KEY);
     if (raw) {
       const saved = JSON.parse(raw);
       if (saved.hr) delete saved.hr[empId];
       if (saved.puantaj) {
-        Object.keys(saved.puantaj).forEach(k => { if (k.startsWith('puan_' + empId + '_')) delete saved.puantaj[k]; });
+        Object.keys(saved.puantaj).forEach(k => {
+          if (k.startsWith('puan_' + empId + '_')) delete saved.puantaj[k];
+        });
       }
       localStorage.setItem(LS_KEY, JSON.stringify(saved));
     }
   } catch(e) {}
+  // Yeni HR key'inden de sil
+  try {
+    const hr = JSON.parse(localStorage.getItem(HR_KEY) || '{}');
+    delete hr[empId];
+    localStorage.setItem(HR_KEY, JSON.stringify(hr));
+  } catch(e) {}
   saveData();
   closeDrawer();
   render();
-  showSaveToast();
+  renderPersonnelList();
+  if (typeof renderEskiPersonel === 'function') renderEskiPersonel();
+  showCloudToast('🗑️ ' + empName + ' kalıcı olarak silindi');
 }
 
 function switchTab(tab) {
@@ -3339,6 +3434,7 @@ function renderEskiPersonel() {
                     <div style="font-size:10px;color:var(--text3)">${kidem.yil} yıl çalışma${kidem.tamYil ? ' ('+kidem.tamYil+' tam yıl)' : ''}</div>
                   </div>` : ''}
                   <button class="btn btn-ghost" style="font-size:11px;color:var(--green);border-color:rgba(16,185,129,0.3)" onclick="reaktifEt(${emp.id})">↩️ Aktife Al</button>
+                  <button class="btn btn-ghost" style="font-size:11px;color:var(--red);border-color:rgba(239,68,68,0.2)" onclick="kaliciSil(${emp.id})" title="Kalıcı sil">🗑️</button>
                 </div>
               </div>
             </div>`;
@@ -5058,9 +5154,15 @@ initApp();
     <!-- Tab 4: Veri Kurtarma -->
     <div id="stabBody4" style="display:none;flex:1;overflow-y:auto">
       <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.3);border-radius:10px;padding:14px;margin-bottom:10px">
+          <div style="font-size:13px;font-weight:700;color:var(--green);margin-bottom:6px">⬆️ Özlük Verilerini Buluta Kaydet</div>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:12px">Bu cihazdaki özlük bilgilerini Supabase'e yükler. Diğer cihazlardan da erişilebilir hale gelir.</div>
+          <button class="btn btn-ghost" style="width:100%;color:var(--green);border-color:rgba(16,185,129,0.3)" onclick="hrBulutaKaydet()">☁️ HR Verilerini Buluta Yükle</button>
+          <div id="yukleLog" style="margin-top:10px;font-size:11px;color:var(--text3);font-family:monospace;white-space:pre-wrap"></div>
+        </div>
         <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.3);border-radius:10px;padding:14px">
-          <div style="font-size:13px;font-weight:700;color:var(--orange);margin-bottom:6px">☁️ Buluttan Özlük Verilerini Kurtар</div>
-          <div style="font-size:12px;color:var(--text2);margin-bottom:12px">Personel özlük bilgileri (TC, IBAN, maaş vs.) kaybolmuşsa Supabase'den geri çeker.</div>
+          <div style="font-size:13px;font-weight:700;color:var(--orange);margin-bottom:6px">⬇️ Buluttan Özlük Verilerini İndir</div>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:12px">Personel özlük bilgileri kaybolmuşsa Supabase'den geri çeker.</div>
           <button class="btn btn-ghost" style="width:100%;color:var(--orange);border-color:rgba(245,158,11,0.3)" onclick="kurtarHRdenBulut()">🔄 Özlük Verilerini Buluttan Getir</button>
           <div id="kurtarmaLog" style="margin-top:10px;font-size:11px;color:var(--text3);font-family:monospace;white-space:pre-wrap"></div>
         </div>
@@ -5098,10 +5200,15 @@ initApp();
     <button class="drawer-tab" onclick="switchDrawerTab('notlar',this)">📝 Notlar</button>
   </div>
   <div class="drawer-body" id="drawerBody"></div>
-  <div class="drawer-footer">
-    <button class="btn btn-ghost" style="flex:0 0 auto;color:var(--red);border-color:rgba(239,68,68,0.3)" onclick="showIstenCikarModal(drawerEmpId)">👋 İşten Çıkar</button>
-    <button class="btn btn-ghost" style="flex:1" onclick="closeDrawer()">Kapat</button>
-    <button class="btn btn-primary" style="flex:2" onclick="saveDrawerProfile()">💾 Kaydet</button>
+  <div class="drawer-footer" style="flex-wrap:wrap;gap:6px">
+    <div style="display:flex;gap:6px;width:100%">
+      <button class="btn btn-ghost" style="flex:1;color:var(--red);border-color:rgba(239,68,68,0.3)" onclick="showIstenCikarModal(drawerEmpId)">👋 İşten Çıkar</button>
+      <button class="btn btn-ghost" style="flex:0 0 auto;color:var(--red);border-color:rgba(239,68,68,0.3);opacity:0.7;font-size:11px" onclick="kaliciSil(drawerEmpId)" title="Kalıcı olarak sil">🗑️ Sil</button>
+    </div>
+    <div style="display:flex;gap:6px;width:100%">
+      <button class="btn btn-ghost" style="flex:1" onclick="closeDrawer()">Kapat</button>
+      <button class="btn btn-primary" style="flex:2" onclick="saveDrawerProfile()">💾 Kaydet</button>
+    </div>
   </div>
 </div>
 
