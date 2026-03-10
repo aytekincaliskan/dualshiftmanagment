@@ -1914,7 +1914,7 @@ function render() {
       // Name cell
       const ntd = document.createElement('td');
       ntd.innerHTML = `<div class="emp-name emp-name-clickable" title="Özlük dosyasını aç"><div class="emp-name-inner"><div class="emp-badge">${initials(emp.name)}</div>${emp.name}</div></div>`;
-      ntd.querySelector('.emp-name').addEventListener('click', () => openDrawer(emp.id));
+      ntd.querySelector('.emp-name').addEventListener('click', () => { if (userRole === 'admin') openDrawer(emp.id); });
       er.appendChild(ntd);
 
       week.dates.forEach(dateStr => {
@@ -1975,10 +1975,12 @@ function render() {
 // ============================================================
 let dragSrc = null;
 function dragStart(e, empId, dateStr) {
+  if (!canEdit()) { e.preventDefault(); return; }
   dragSrc = {empId, dateStr};
   setTimeout(() => { if(e.target.parentElement) e.target.classList.add('dragging'); }, 0);
 }
 function dropShift(toEmpId, toDate) {
+  if (!canEdit()) return;
   if (!dragSrc) return;
   const from = getShift(dragSrc.empId, dragSrc.dateStr);
   if (!from) return;
