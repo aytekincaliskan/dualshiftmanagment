@@ -2564,36 +2564,23 @@ function resetAllData() {
 // ============================================================
 let selectedEmpId = null;
 
-// Extend DEFAULT_DATA with HR fields
+// HR verisi AYRI key'de — cloud polling asla dokunamaz
+const HR_KEY = 'dual_hr_v1';
+
 function getEmpHR(empId) {
-  const saved = loadData();
-  return (saved.hr || {})[empId] || {};
+  try {
+    const all = JSON.parse(localStorage.getItem(HR_KEY) || '{}');
+    return all[empId] || {};
+  } catch(e) { return {}; }
 }
-let lastHRSaveTime = 0; // HR son kayıt zamanı
 
 function saveEmpHR(empId, data) {
   try {
-    const raw = localStorage.getItem(LS_KEY);
-    const saved = raw ? JSON.parse(raw) : {};
-    if (!saved.hr) saved.hr = {};
-    saved.hr[empId] = { ...(saved.hr[empId] || {}), ...data };
-    localStorage.setItem(LS_KEY, JSON.stringify(saved));
-    lastHRSaveTime = Date.now(); // kayıt zamanını işaretle
-    // Supabase'e kaydet ve updated_at'ı güncelle
-    sbSave(saved).then(ok => {
-      if (ok) {
-        // updated_at'ı da güncelle ki polling bu değişikliği tekrar getirmesin
-        fetch(SB_URL + '/rest/v1/vardiya_data?id=eq.' + SB_RECORD_ID + '&select=updated_at', {
-          headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY }
-        }).then(r => r.json()).then(rows => {
-          if (rows && rows.length) lastUpdatedAt = rows[0].updated_at;
-        }).catch(() => {});
-        setSyncStatus('ok');
-      } else {
-        setSyncStatus('offline');
-      }
-    }).catch(() => setSyncStatus('offline'));
+    const all = JSON.parse(localStorage.getItem(HR_KEY) || '{}');
+    all[empId] = { ...(all[empId] || {}), ...data };
+    localStorage.setItem(HR_KEY, JSON.stringify(all));
     showSaveToast();
+    setSyncStatus('ok');
   } catch(e) { console.warn('HR kayıt hatası:', e); }
 }
 
@@ -3146,13 +3133,12 @@ function deleteIzinDrawer(empId, idx) {
 const MONTHS_TR = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran',
                    'Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
 
-// Telefon numarası formatlama: 05321234567 → 0532 123 45 67
+// Telefon numarası formatlama: 05321234567 → 0(532)1234567
 function formatPhone(val) {
   const v = String(val).replace(/\D/g, '').slice(0, 11);
-  if (v.length <= 4) return v;
-  if (v.length <= 7) return v.slice(0,4)+' '+v.slice(4);
-  if (v.length <= 9) return v.slice(0,4)+' '+v.slice(4,7)+' '+v.slice(7);
-  return v.slice(0,4)+' '+v.slice(4,7)+' '+v.slice(7,9)+' '+v.slice(9);
+  if (v.length <= 1) return v;
+  if (v.length <= 4) return v.slice(0,1)+'('+v.slice(1);
+  return v.slice(0,1)+'('+v.slice(1,4)+')'+v.slice(4);
 }
 
 const DAY_STATUS = {
