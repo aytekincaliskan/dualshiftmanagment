@@ -2885,6 +2885,34 @@ function renderProfile(empId) {
         </div>
       </div>
 
+      <!-- BANKA & ÖDEME BİLGİLERİ -->
+      <div class="profile-section">
+        <div class="profile-section-title">🏦 Banka & Ödeme Bilgileri</div>
+        <div class="profile-fields">
+          <div class="profile-field">
+            <label class="profile-field-label">Banka Adı</label>
+            <input class="profile-input" id="pf_banka" placeholder="Ziraat, Garanti, İş..." value="${hr.banka||''}">
+          </div>
+          <div class="profile-field">
+            <label class="profile-field-label">IBAN</label>
+            <input class="profile-input" id="pf_iban" placeholder="TR00 0000 0000 0000 0000 0000 00"
+              value="${hr.iban||''}" maxlength="32"
+              oninput="this.value=this.value.replace(/[^TR0-9a-z]/gi,'').toUpperCase().replace(/(.{4})/g,'$1 ').trim().slice(0,32)">
+          </div>
+          <div class="profile-field">
+            <label class="profile-field-label">Yemek Kartı No</label>
+            <input class="profile-input" id="pf_yemekKartNo" placeholder="Kart numarası..." value="${hr.yemekKartNo||''}">
+          </div>
+          <div class="profile-field">
+            <label class="profile-field-label">Yemek Kartı Türü</label>
+            <select class="profile-select" id="pf_yemekKartTuru">
+              <option value="">Seçin</option>
+              ${['Ticket Restaurant','Multinet','Sodexo','Edenred','Setcard','Diğer'].map(t=>`<option value="${t}" ${hr.yemekKartTuru===t?'selected':''}>${t}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+      </div>
+
       <!-- KIDEM -->
       <div class="profile-section">
         <div class="profile-section-title">📅 Kıdem & Deneme Süresi</div>
@@ -2964,11 +2992,12 @@ function saveProfile(empId) {
   // field_key: input_id_suffix şeklinde map — id uyuşmayanlar için
   const fieldMap = {
     tc:'tc', dogum:'dogum', tel:'tel', email:'email', adres:'adres',
-    giristarihi:'giris',        // pf_giris → giristarihi
+    giristarihi:'giris',
     sgkbaslangic:'sgkbaslangic',
     sgk:'sgk', maas:'maas', eldenmaas:'eldenmaas', setcard:'setcard', yol:'yol',
     sozlesme:'sozlesme', pozisyon:'pozisyon', departman:'departman',
-    yillikIzin:'yillikIzin', kullanilanIzin:'kullanilanIzin', notlar:'notlar'
+    yillikIzin:'yillikIzin', kullanilanIzin:'kullanilanIzin', notlar:'notlar',
+    banka:'banka', iban:'iban', yemekKartNo:'yemekKartNo', yemekKartTuru:'yemekKartTuru'
   };
   const existing = getEmpHR(empId);
   const data = { ...existing }; // mevcut tüm veriyi koru
@@ -3658,8 +3687,14 @@ function renderPuantajBody() {
   const primler = puan.primler || [];
   const toplamPrim = primler.reduce((s,p) => s + parseFloat(p.tutar||0), 0);
 
-  // Ödenecek net
-  const odenecekNet = toplamNet - kesintiTutar + mesaiUcret + toplamPrim + setcard + yolParasi;
+  // Avanslar — tipe göre hangi maaştan düşeceği hesapta ayrı gösterilir
+  const avanslar = puan.avanslar || [];
+  const avansElden = avanslar.filter(a=>a.tip==='elden').reduce((s,a)=>s+parseFloat(a.tutar||0),0);
+  const avansBanka = avanslar.filter(a=>a.tip==='banka').reduce((s,a)=>s+parseFloat(a.tutar||0),0);
+  const toplamAvans = avansElden + avansBanka;
+
+  // Ödenecek net (avans düşülmüş)
+  const odenecekNet = toplamNet - kesintiTutar + mesaiUcret + toplamPrim + setcard + yolParasi - toplamAvans;
 
   const body = document.getElementById('puantajBody');
   body.innerHTML = `
@@ -3768,6 +3803,33 @@ function renderPuantajBody() {
       </div>
     </div>
 
+    <!-- AVANSLAR -->
+    <div class="salary-section">
+      <div class="salary-section-title">
+        💸 Avanslar
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-ghost" style="font-size:11px;padding:4px 10px" onclick="addAvans('elden')">💵 Elden Avans</button>
+          <button class="btn btn-ghost" style="font-size:11px;padding:4px 10px" onclick="addAvans('banka')">🏦 Banka Avansı</button>
+        </div>
+      </div>
+      <div id="avansListBox">
+        ${(puan.avanslar||[]).length === 0
+          ? '<div style="font-size:12px;color:var(--text3);text-align:center;padding:8px">Avans girilmemiş</div>'
+          : (puan.avanslar||[]).map((a,i) => {
+            const clr = a.tip==='elden' ? 'var(--orange)' : 'var(--accent)';
+            const icon = a.tip==='elden' ? '💵' : '🏦';
+            const tipLbl = a.tip==='elden' ? 'Elden' : 'Banka';
+            return '<div class="prim-row">' +
+              '<span class="prim-type">' + icon + ' ' + tipLbl + ' Avans</span>' +
+              '<span style="font-size:10px;color:var(--text3);flex:1">' + (a.tarih||'') + (a.aciklama ? ' · '+a.aciklama : '') + '</span>' +
+              '<span class="prim-amount" style="color:' + clr + '">-' + Number(a.tutar).toLocaleString('tr-TR') + '₺</span>' +
+              '<button class="prim-del" onclick="deleteAvans(' + i + ')">×</button>' +
+              '</div>';
+          }).join('')
+        }
+      </div>
+    </div>
+
     <!-- MAAŞ HESABI -->
     <div class="salary-section">
       <div class="salary-section-title">📊 Maaş Hesabı — ${MONTHS_TR[puantajMonth]} ${puantajYear}</div>
@@ -3810,6 +3872,14 @@ function renderPuantajBody() {
           <span style="font-size:13px;font-weight:600;color:var(--text2)">Toplam Net</span>
           <span style="font-size:14px;font-weight:700">${toplamNet.toLocaleString('tr-TR',{maximumFractionDigits:0})}₺</span>
         </div>
+        ${avansElden > 0 ? `<div class="salary-total-row">
+          <span class="salary-total-lbl">Elden Avans Kesintisi</span>
+          <span class="salary-total-val" style="color:var(--orange)">-${avansElden.toLocaleString('tr-TR',{maximumFractionDigits:0})}₺ <span style="font-size:10px;color:var(--text3)">(elden maaştan)</span></span>
+        </div>` : ''}
+        ${avansBanka > 0 ? `<div class="salary-total-row">
+          <span class="salary-total-lbl">Banka Avans Kesintisi</span>
+          <span class="salary-total-val" style="color:var(--accent)">-${avansBanka.toLocaleString('tr-TR',{maximumFractionDigits:0})}₺ <span style="font-size:10px;color:var(--text3)">(resmi maaştan)</span></span>
+        </div>` : ''}
         <div class="salary-total-row grand">
           <span style="font-size:15px;font-weight:700">ÖDENECEk NET</span>
           <span class="salary-total-val" style="font-size:20px;color:var(--green)">${odenecekNet.toLocaleString('tr-TR',{maximumFractionDigits:0})}₺</span>
@@ -3890,6 +3960,61 @@ function addPrim() {
 function deletePrim(idx) {
   const puan = loadPuantaj(puantajEmpId, puantajYear, puantajMonth);
   puan.primler.splice(idx,1);
+  savePuantaj(puantajEmpId, puantajYear, puantajMonth, puan, false);
+  renderPuantajBody();
+}
+
+function addAvans(tip) {
+  // Mini modal ile avans gir
+  let m = document.getElementById('avansModal');
+  if (!m) {
+    m = document.createElement('div');
+    m.id = 'avansModal';
+    m.className = 'modal-overlay';
+    document.body.appendChild(m);
+  }
+  const tipLbl = tip === 'elden' ? '💵 Elden Avans' : '🏦 Banka Avansı';
+  const tipAcik = tip === 'elden' ? 'Elden maaştan düşülecek' : 'Resmi maaştan düşülecek';
+  m.innerHTML = `
+    <div class="modal" style="width:360px">
+      <div class="modal-title">${tipLbl}</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:-8px;margin-bottom:12px">${tipAcik}</div>
+      <div class="form-group">
+        <label class="form-label">Tutar (₺)</label>
+        <input type="number" class="form-input" id="avansInput" placeholder="0" min="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Tarih</label>
+        <input type="date" class="form-input" id="avansTarih" value="${new Date().toISOString().slice(0,10)}">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Açıklama (opsiyonel)</label>
+        <input type="text" class="form-input" id="avansAciklama" placeholder="...">
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="document.getElementById('avansModal').classList.remove('open')">İptal</button>
+        <button class="btn btn-primary" onclick="confirmAvans('${tip}')">Ekle</button>
+      </div>
+    </div>`;
+  m.classList.add('open');
+}
+
+function confirmAvans(tip) {
+  const tutar = parseFloat(document.getElementById('avansInput').value || '0');
+  if (!tutar || isNaN(tutar) || tutar <= 0) { alert('Geçerli bir tutar girin'); return; }
+  const tarih = document.getElementById('avansTarih').value;
+  const aciklama = document.getElementById('avansAciklama').value;
+  const puan = loadPuantaj(puantajEmpId, puantajYear, puantajMonth);
+  if (!puan.avanslar) puan.avanslar = [];
+  puan.avanslar.push({ tip, tutar, tarih, aciklama });
+  savePuantaj(puantajEmpId, puantajYear, puantajMonth, puan, false);
+  document.getElementById('avansModal').classList.remove('open');
+  renderPuantajBody();
+}
+
+function deleteAvans(idx) {
+  const puan = loadPuantaj(puantajEmpId, puantajYear, puantajMonth);
+  puan.avanslar.splice(idx, 1);
   savePuantaj(puantajEmpId, puantajYear, puantajMonth, puan, false);
   renderPuantajBody();
 }
