@@ -1778,8 +1778,9 @@ function saveData() {
       activeLocations: [...activeLocations],
       employees,
       shifts,
-      storeHours: existing.storeHours || {}, // ← Mağaza saatlerini koru!
-      puantaj:    existing.puantaj    || {}, // ← Puantaj verilerini koru!
+      storeHours: existing.storeHours || {},
+      puantaj:    existing.puantaj    || {},
+      hr:         existing.hr         || {}, // ← Özlük verilerini koru!
     };
     localStorage.setItem(LS_KEY, JSON.stringify(data));
     showSaveToast();
@@ -2866,12 +2867,12 @@ function saveProfile(empId) {
   const fields = ['tc','dogum','tel','email','adres','giristarihi','sgkbaslangic','sgk',
                   'maas','eldenmaas','setcard','yol',
                   'sozlesme','pozisyon','departman','yillikIzin','kullanilanIzin','notlar'];
-  const data = {};
+  const existing = getEmpHR(empId);
+  const data = { ...existing }; // mevcut tüm veriyi koru, üzerine yaz
   fields.forEach(f => {
     const el = document.getElementById('pf_' + f);
-    if (el) data[f] = el.value;
+    if (el) data[f] = el.value; // sadece DOM'da olan alanları güncelle
   });
-  const existing = getEmpHR(empId);
   data.izinGecmisi = existing.izinGecmisi || [];
   // kıdem/izin hakkını otomatik hesapla
   if (data.giristarihi) {
@@ -3089,10 +3090,11 @@ function saveDrawerProfile() {
     pozisyon:'d_pozisyon', departman:'d_departman',
     yillikIzin:'d_yillikIzin', kullanilanIzin:'d_kullanilanIzin', notlar:'d_notlar'
   };
-  const updates = {};
+  // Sadece DOM'da olan (görünen tab) alanları güncelle, diğerlerini koru
+  const updates = { ...hr }; // mevcut tüm HR verisini koru
   Object.entries(fields).forEach(([key, id]) => {
     const val = get(id);
-    if (val !== null) updates[key] = val;
+    if (val !== null) updates[key] = val; // sadece görünen tab'daki alanları güncelle
   });
   updates.izinGecmisi = hr.izinGecmisi || [];
 
