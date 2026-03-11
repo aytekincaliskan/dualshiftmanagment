@@ -168,6 +168,9 @@
     background: var(--surface);
     border-bottom: 2px solid var(--border);
     text-align: center;
+    position: sticky;
+    top: 109px; /* header(61px) + tab-bar(48px) */
+    z-index: 9;
   }
   .schedule-table th:first-child { text-align: left; padding-left: 16px; border-radius: 12px 0 0 0; min-width: 160px; }
   .schedule-table th:last-child { border-radius: 0 12px 0 0; }
@@ -546,6 +549,7 @@
     padding: 0 32px;
     border-bottom: 1px solid var(--border);
     background: var(--bg);
+    position: sticky; top: 61px; z-index: 90;
   }
   .tab-btn {
     padding: 12px 18px; font-family: inherit; font-size: 13px; font-weight: 600;
@@ -2300,12 +2304,8 @@ function autoAssignMod1() {
 
     week.dates.forEach((dateStr, i) => {
       if (getShift(emp.id, dateStr)) return; // dolu, atla
-      // Pzt=0 … Paz=6 — dateStr "dd.mm" formatı
-      const [dd, mm] = dateStr.split('.');
-      const d = new Date(week.weekKey.split('-W')[0], parseInt(mm)-1, parseInt(dd));
-      const dow = (d.getDay() + 6) % 7; // Pzt=0
-
-      if (dow === izinGunIdx) {
+      // i = 0 Pzt, 1 Sal, 2 Çar, 3 Per, 4 Cum, 5 Cmt, 6 Paz — Date parse gerekmez
+      if (i === izinGunIdx) {
         setShift(emp.id, dateStr, { type: izinTip });
       } else {
         setShift(emp.id, dateStr, { type: 'normal', in: acilis, out: kapanis });
@@ -2357,12 +2357,9 @@ function autoAssignMod2() {
     week.dates.forEach((dateStr, i) => {
       if (getShift(emp.id, dateStr)) return; // dolu
 
-      const [dd, mm] = dateStr.split('.');
-      const d = new Date(parseInt(week.weekKey.split('-W')[0]), parseInt(mm)-1, parseInt(dd));
-      const dow = (d.getDay() + 6) % 7; // Pzt=0
-
+      // i = 0 Pzt ... 5 Cmt, 6 Paz — Date parse gerekmez
       // Hafta sonu (Cmt/Paz) — çalışma
-      if (dow >= 5) {
+      if (i >= 5) {
         setShift(emp.id, dateStr, { type: 'normal', in: acilis, out: kapanis });
         assigned++;
         return;
