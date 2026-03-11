@@ -2776,7 +2776,7 @@ function renderIzinTipleriPanel() {
         (v.kesinti > 0
           ? '<span style="font-size:11px;background:rgba(239,68,68,0.1);color:var(--red);padding:2px 8px;border-radius:6px">-' + (v.kesinti===0.5?'½':v.kesinti) + ' gün</span>'
           : '<span style="font-size:11px;background:rgba(16,185,129,0.1);color:var(--green);padding:2px 8px;border-radius:6px">Ücretli</span>') +
-        (sililebilir ? '<button onclick="ozelIzinSil('' + k + '')" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;padding:0 4px">×</button>' : '') +
+        (sililebilir ? '<button onclick="ozelIzinSil(\'' + k + '\')" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;padding:0 4px">×</button>' : '') +
       '</div>' +
     '</div>';
 
@@ -3108,6 +3108,14 @@ function deleteEmployee(empId) {
 }
 
 function switchTab(tab) {
+  // Yetki kontrolü — admin-only sekmeler
+  if ((tab==='personnel' || tab==='puantaj' || tab==='eskipersonel') && !isAdmin()) {
+    tab = 'vardiya'; // yetkisiz erişimi engelle
+  }
+  if (tab==='takvim' && !isEditor()) {
+    tab = 'vardiya';
+  }
+
   document.getElementById('scheduleView').style.display      = tab==='vardiya'      ? '' : 'none';
   document.getElementById('personnelView').style.display     = tab==='personnel'     ? 'block' : 'none';
   document.getElementById('puantajView').style.display       = tab==='puantaj'       ? 'block' : 'none';
@@ -3115,7 +3123,7 @@ function switchTab(tab) {
   document.getElementById('takvimView').style.display        = tab==='takvim'        ? 'block' : 'none';
   if (tab === 'eskipersonel') renderEskiPersonel();
   ['tabVardiya','tabPersonnel','tabPuantaj','tabEskiPersonel','tabTakvim'].forEach((id,i) => {
-    document.getElementById(id).classList.toggle('active', ['vardiya','personnel','puantaj','takvim'][i]===tab);
+    document.getElementById(id).classList.toggle('active', ['vardiya','personnel','puantaj','eskipersonel','takvim'][i]===tab);
   });
   if (tab==='personnel') renderPersonnelList();
   if (tab==='puantaj')   renderPuantaj();
@@ -3151,6 +3159,7 @@ function selectEmployee(empId) {
 }
 
 function renderProfile(empId) {
+  if (!isAdmin()) return; // Özlük bilgileri sadece admin görebilir
   const emp = employees.find(e => e.id === empId);
   if (!emp) return;
   const hr = getEmpHR(empId);
@@ -3685,6 +3694,7 @@ let drawerEmpId = null;
 let activeDrawerTab = 'kisisel';
 
 function openDrawer(empId) {
+  if (!isAdmin()) return; // Sadece admin personel kartını açabilir
   drawerEmpId = empId;
   activeDrawerTab = 'kisisel';
   const emp = employees.find(e => e.id === empId);
