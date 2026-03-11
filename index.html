@@ -145,7 +145,8 @@
   .main { display: grid; grid-template-columns: 1fr 280px; gap: 0; min-height: calc(100vh - 140px); }
 
   /* SCHEDULE TABLE */
-  .schedule-area { padding: 20px 32px 32px; overflow-x: auto; }
+  .schedule-area { padding: 20px 32px 32px; overflow: visible; }
+  .schedule-scroll-wrap { overflow-x: auto; }
 
   /* Floating sticky gün bar */
   #stickyDayBar {
@@ -200,6 +201,9 @@
     background: var(--surface);
     border-bottom: 2px solid var(--border);
     text-align: center;
+    position: sticky;
+    top: 130px;
+    z-index: 8;
   }
   .schedule-table th:first-child { text-align: left; padding-left: 16px; border-radius: 12px 0 0 0; min-width: 160px; }
   .schedule-table th:last-child { border-radius: 0 12px 0 0; }
@@ -578,6 +582,9 @@
     padding: 0 32px;
     border-bottom: 1px solid var(--border);
     background: var(--bg);
+    position: sticky;
+    top: 81px;
+    z-index: 95;
   }
   .tab-btn {
     padding: 12px 18px; font-family: inherit; font-size: 13px; font-weight: 600;
@@ -1160,11 +1167,6 @@
 </div>
 
 <!-- STATS BAR -->
-<!-- Floating sticky gün başlıkları -->
-<div id="stickyDayBar">
-  <table><thead id="stickyDayHead"></thead></table>
-</div>
-
 <div id="scheduleView">
 <div style="display:flex;justify-content:flex-end;padding:8px 24px 0">
   <button class="btn btn-ghost" style="font-size:11px" onclick="exportExcel('vardiya')">📥 Excel</button>
@@ -1217,10 +1219,12 @@
         <span style="font-size:11px;color:var(--text3)">Shift'e sağ tık: düzenle / sil &nbsp;|&nbsp; Sürükle: yer değiştir</span>
       </div>
     </div>
+    <div class="schedule-scroll-wrap">
     <table class="schedule-table" id="scheduleTable">
       <thead id="tableHead"></thead>
       <tbody id="tableBody"></tbody>
     </table>
+    </div>
   </div>
 
   <!-- SIDEBAR -->
