@@ -1780,11 +1780,13 @@ function updateTabVisibility() {
 
   // Butonlar
   const ayarBtn = document.getElementById('ayarlarBtn');
-  const ekleBtn = document.getElementById('calisanEkleBtn');
-  const autoBtn = document.querySelector('button[onclick="showAutoAssign()"]');
-  if (ayarBtn) ayarBtn.style.display = isAdmin() ? '' : 'none';
-  if (ekleBtn) ekleBtn.style.display = isAdmin() ? '' : 'none';
-  if (autoBtn) autoBtn.style.display = canEdit()  ? '' : 'none';
+  const ekleBtn  = document.getElementById('calisanEkleBtn');
+  const autoBtn  = document.querySelector('button[onclick="showAutoAssign()"]');
+  const clearBtn = document.querySelector('button[onclick="clearWeekConfirm()"]');
+  if (ayarBtn)  ayarBtn.style.display  = isAdmin() ? '' : 'none';
+  if (ekleBtn)  ekleBtn.style.display  = isAdmin() ? '' : 'none';
+  if (autoBtn)  autoBtn.style.display  = isAdmin() ? '' : 'none';
+  if (clearBtn) clearBtn.style.display = isAdmin() ? '' : 'none';
 }
 
 
