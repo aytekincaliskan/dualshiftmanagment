@@ -1685,8 +1685,9 @@ async function doLogin() {
   const user = vpUsers.find(u => u.username.toLowerCase() === uname && u.password === pass);
   if (user) {
     saveSession(user);
-    showApp(); // uygulamayı göster, login ekranını gizle
-    // Cloud'dan veri çek
+    showApp();
+    applyOzelIzinler();
+    startPolling();
     loadCloudData();
     const roleLabel = { admin:'👑 Admin', editor:'✏️ Editör', viewer:'👁️ Görüntüleyici' }[user.role] || user.role;
     showCloudToast(`✅ Hoş geldiniz, ${user.display_name || user.username}! (${roleLabel})`);
@@ -5261,6 +5262,8 @@ async function initApp() {
 
   // Oturum var — uygulamayı aç
   showApp();
+  applyOzelIzinler(); // özel izin tiplerini DAY_STATUS'a ekle
+  startPolling();     // bulut polling başlat
 
   // hasSession varsa cloud'dan veri çek (showApp zaten çağrıldı)
   loadCloudData();
@@ -5303,8 +5306,6 @@ async function loadCloudData() {
         const rows2 = await res2.json();
         if (rows2 && rows2.length) lastUpdatedAt = rows2[0].updated_at;
       } catch(e) {}
-      applyOzelIzinler(); // özel izin tiplerini DAY_STATUS'a ekle
-  startPolling();
     } else {
       setSyncStatus('offline');
     }
