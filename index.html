@@ -147,38 +147,6 @@
   /* SCHEDULE TABLE */
   .schedule-area { padding: 20px 32px 32px; overflow-x: auto; }
 
-  /* Floating sticky gün bar */
-  #stickyDayBar {
-    display: none;
-    position: fixed;
-    top: 0; left: 0; right: 0;
-    z-index: 85;
-    background: rgba(10,14,26,0.97);
-    backdrop-filter: blur(12px);
-    border-bottom: 2px solid var(--border);
-    padding: 0 32px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-  }
-  #stickyDayBar table {
-    width: 100%;
-    border-collapse: separate;
-    border-spacing: 0;
-    min-width: 900px;
-    table-layout: fixed;
-  }
-  #stickyDayBar th {
-    padding: 8px 8px;
-    font-size: 11px; font-weight: 700;
-    text-transform: uppercase; letter-spacing: 0.5px;
-    color: var(--text2);
-    text-align: center;
-  }
-  #stickyDayBar th:first-child { text-align: left; padding-left: 16px; width: 160px; color: var(--text3); font-size:10px; }
-  #stickyDayBar .day-header { font-size: 13px; font-weight: 700; color: var(--text); display: block; }
-  #stickyDayBar .date-header { font-size: 10px; color: var(--text3); display: block; }
-  #stickyDayBar .today-col .day-header { color: var(--accent); }
-  #stickyDayBar .today-col { border-bottom: 2px solid var(--accent); }
-
   .section-header {
     display: flex; align-items: center; justify-content: space-between;
     margin-bottom: 16px;
@@ -200,9 +168,6 @@
     background: var(--surface);
     border-bottom: 2px solid var(--border);
     text-align: center;
-    position: sticky;
-    top: 0px; /* JS ile güncellenir */
-    z-index: 8;
   }
   .schedule-table th:first-child { text-align: left; padding-left: 16px; border-radius: 12px 0 0 0; min-width: 160px; }
   .schedule-table th:last-child { border-radius: 0 12px 0 0; }
@@ -581,9 +546,6 @@
     padding: 0 32px;
     border-bottom: 1px solid var(--border);
     background: var(--bg);
-    position: sticky;
-    top: 0px; /* JS ile güncellenir */
-    z-index: 95;
   }
   .tab-btn {
     padding: 12px 18px; font-family: inherit; font-size: 13px; font-weight: 600;
@@ -1113,43 +1075,6 @@
     color: var(--orange);
   }
 
-
-  /* Sticky gün başlık bar — JS ile kontrol edilir */
-  #fixedDayBar {
-    display: none;
-    position: fixed;
-    left: 0; right: 0;
-    z-index: 88;
-    background: var(--surface);
-    border-bottom: 2px solid var(--border);
-    box-shadow: 0 4px 16px rgba(0,0,0,0.5);
-    overflow: hidden;
-  }
-  #fixedDayBar table {
-    border-collapse: separate;
-    border-spacing: 0;
-    table-layout: fixed;
-  }
-  #fixedDayBar th {
-    padding: 8px 8px;
-    font-size: 11px; font-weight: 700;
-    text-transform: uppercase; letter-spacing: 0.5px;
-    color: var(--text2);
-    text-align: center;
-    white-space: nowrap;
-    overflow: hidden;
-  }
-  #fixedDayBar th:first-child {
-    text-align: left;
-    padding-left: 16px;
-    color: var(--text3);
-    font-size: 10px;
-  }
-  #fixedDayBar .day-header { font-size: 13px; font-weight: 700; color: var(--text); display: block; }
-  #fixedDayBar .date-header { font-size: 10px; color: var(--text3); display: block; }
-  #fixedDayBar .today-col .day-header { color: var(--accent); }
-  #fixedDayBar .today-col { border-bottom: 2px solid var(--accent); }
-
 </style>
 </head>
 <body>
@@ -1203,7 +1128,6 @@
 </div>
 
 <!-- STATS BAR -->
-<div id="fixedDayBar"><table id="fixedDayTable"><thead id="fixedDayHead"></thead></table></div>
 <div id="scheduleView">
 <div style="display:flex;justify-content:flex-end;padding:8px 24px 0">
   <button class="btn btn-ghost" style="font-size:11px" onclick="exportExcel('vardiya')">📥 Excel</button>
@@ -1746,7 +1670,6 @@ function showApp() {
   updateRoleBadge();
   updateTabVisibility();
   setSyncStatus('local');
-  setTimeout(fixStickyPositions, 150); // gerçek yükseklikleri ölç ve uygula
 }
 // Eski fonksiyon isimleri — geriye uyumluluk için
 function promptLogin() { showLoginScreen(); }
@@ -1819,13 +1742,11 @@ function updateTabVisibility() {
 
   // Butonlar
   const ayarBtn = document.getElementById('ayarlarBtn');
-  const ekleBtn  = document.getElementById('calisanEkleBtn');
-  const autoBtn  = document.querySelector('button[onclick="showAutoAssign()"]');
-  const clearBtn = document.querySelector('button[onclick="clearWeekConfirm()"]');
-  if (ayarBtn)  ayarBtn.style.display  = isAdmin() ? '' : 'none';
-  if (ekleBtn)  ekleBtn.style.display  = isAdmin() ? '' : 'none';
-  if (autoBtn)  autoBtn.style.display  = isAdmin() ? '' : 'none';
-  if (clearBtn) clearBtn.style.display = isAdmin() ? '' : 'none';
+  const ekleBtn = document.getElementById('calisanEkleBtn');
+  const autoBtn = document.querySelector('button[onclick="showAutoAssign()"]');
+  if (ayarBtn) ayarBtn.style.display = isAdmin() ? '' : 'none';
+  if (ekleBtn) ekleBtn.style.display = isAdmin() ? '' : 'none';
+  if (autoBtn) autoBtn.style.display = canEdit()  ? '' : 'none';
 }
 
 
@@ -1993,11 +1914,6 @@ function render() {
     tr.appendChild(t);
   });
   head.appendChild(tr);
-
-  // Sticky day bar'ı da güncelle (aynı içerik)
-  updateStickyDayBar(week, todayStr);
-  // th top değerlerini render sonrası güncelle
-  requestAnimationFrame(fixStickyPositions);
 
   // Build body
   const body = document.getElementById('tableBody');
@@ -2268,95 +2184,6 @@ function saveEmployee() {
 // ============================================================
 // AUTO ASSIGN
 // ============================================================
-
-
-// ── STICKY KONUM HESAPLA ──────────────────────────────────────────────
-function fixStickyPositions() {
-  const headerEl = document.querySelector('header');
-  const tabBarEl = document.querySelector('.tab-bar');
-  const headerH  = headerEl  ? headerEl.getBoundingClientRect().height  : 81;
-  const tabBarH  = tabBarEl  ? tabBarEl.getBoundingClientRect().height  : 48;
-
-  // tab-bar header'ın hemen altında
-  if (tabBarEl) tabBarEl.style.top = headerH + 'px';
-
-  // thead başlıkları header + tab-bar altında
-  const theadThs = document.querySelectorAll('.schedule-table th');
-  theadThs.forEach(th => {
-    th.style.top = (headerH + tabBarH) + 'px';
-  });
-}
-
-
-// ── FIXED GÜN BAŞLIK BARI ─────────────────────────────────────
-function setupFixedDayBar() {
-  const bar       = document.getElementById('fixedDayBar');
-  const schedArea = document.querySelector('.schedule-area');
-  const mainTable = document.getElementById('scheduleTable');
-  if (!bar || !schedArea || !mainTable) return;
-
-  function syncAndShow() {
-    const thead      = document.getElementById('tableHead');
-    if (!thead) return;
-    const theadRect  = thead.getBoundingClientRect();
-    const barTop     = theadRect.bottom; // thead'in alt kenarı
-
-    // Thead ekrandan çıktıysa bar'ı göster
-    if (theadRect.bottom <= 0) {
-      // Pozisyon: schedArea'nın üst kenarı (tab-bar altı)
-      const areaRect = schedArea.getBoundingClientRect();
-      bar.style.top  = Math.max(0, areaRect.top) + 'px';
-      bar.style.left = areaRect.left + 'px';
-      bar.style.width = areaRect.width + 'px';
-      bar.style.display = 'block';
-
-      // Sütun genişliklerini orijinal th'lerden kopyala
-      const origThs   = thead.querySelectorAll('th');
-      const fixedThs  = bar.querySelectorAll('th');
-      origThs.forEach((th, i) => {
-        if (fixedThs[i]) {
-          fixedThs[i].style.width = th.getBoundingClientRect().width + 'px';
-        }
-      });
-
-      // Yatay scroll senkronize
-      const fixedTable = document.getElementById('fixedDayTable');
-      if (fixedTable) fixedTable.style.transform = 'translateX(-' + schedArea.scrollLeft + 'px)';
-    } else {
-      bar.style.display = 'none';
-    }
-  }
-
-  window.addEventListener('scroll', syncAndShow, { passive: true });
-  schedArea.addEventListener('scroll', () => {
-    if (bar.style.display !== 'none') {
-      const fixedTable = document.getElementById('fixedDayTable');
-      if (fixedTable) fixedTable.style.transform = 'translateX(-' + schedArea.scrollLeft + 'px)';
-    }
-  }, { passive: true });
-}
-
-// render() çağrıldığında fixedDayBar içeriğini güncelle
-function updateFixedDayBar(week, todayStr) {
-  const fHead = document.getElementById('fixedDayHead');
-  if (!fHead) return;
-  fHead.innerHTML = '';
-  const tr = document.createElement('tr');
-
-  const th0 = document.createElement('th');
-  th0.textContent = 'ÇALIŞAN';
-  tr.appendChild(th0);
-
-  week.dates.forEach((d, i) => {
-    const isToday = d === todayStr;
-    const th = document.createElement('th');
-    th.className = isToday ? 'today-col' : '';
-    th.innerHTML = '<span class="day-header">' + week.dayNames[i] + (isToday ? '<span class="today-indicator"></span>' : '') + '</span><span class="date-header">' + d + '</span>';
-    tr.appendChild(th);
-  });
-  fHead.appendChild(tr);
-}
-
 function clearWeekConfirm() {
   const week = getWeekByOffset(currentWeekOffset);
   const [dd, mm] = week.dates[0].split('.');
@@ -2473,8 +2300,12 @@ function autoAssignMod1() {
 
     week.dates.forEach((dateStr, i) => {
       if (getShift(emp.id, dateStr)) return; // dolu, atla
-      // i = 0 Pzt, 1 Sal, 2 Çar, 3 Per, 4 Cum, 5 Cmt, 6 Paz — Date parse gerekmez
-      if (i === izinGunIdx) {
+      // Pzt=0 … Paz=6 — dateStr "dd.mm" formatı
+      const [dd, mm] = dateStr.split('.');
+      const d = new Date(week.weekKey.split('-W')[0], parseInt(mm)-1, parseInt(dd));
+      const dow = (d.getDay() + 6) % 7; // Pzt=0
+
+      if (dow === izinGunIdx) {
         setShift(emp.id, dateStr, { type: izinTip });
       } else {
         setShift(emp.id, dateStr, { type: 'normal', in: acilis, out: kapanis });
@@ -2526,9 +2357,12 @@ function autoAssignMod2() {
     week.dates.forEach((dateStr, i) => {
       if (getShift(emp.id, dateStr)) return; // dolu
 
-      // i = 0 Pzt ... 5 Cmt, 6 Paz — Date parse gerekmez
+      const [dd, mm] = dateStr.split('.');
+      const d = new Date(parseInt(week.weekKey.split('-W')[0]), parseInt(mm)-1, parseInt(dd));
+      const dow = (d.getDay() + 6) % 7; // Pzt=0
+
       // Hafta sonu (Cmt/Paz) — çalışma
-      if (i >= 5) {
+      if (dow >= 5) {
         setShift(emp.id, dateStr, { type: 'normal', in: acilis, out: kapanis });
         assigned++;
         return;
