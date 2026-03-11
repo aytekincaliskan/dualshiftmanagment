@@ -32,8 +32,8 @@
     font-family: 'Space Grotesk', sans-serif;
     background: var(--bg);
     color: var(--text);
-    min-height: 100vh;
-    overflow-x: hidden;
+    height: 100vh;
+    overflow: hidden; /* scroll yok — içerik kendi scroll eder */
   }
 
   /* Background grid */
@@ -48,7 +48,12 @@
     z-index: 0;
   }
 
-  .wrapper { position: relative; z-index: 1; }
+  .wrapper {
+    position: relative; z-index: 1;
+    height: 100vh;
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
 
   /* HEADER */
   header {
@@ -142,10 +147,21 @@
   .stat-lbl { font-size: 11px; color: var(--text2); margin-top: 2px; }
 
   /* MAIN LAYOUT */
-  .main { display: grid; grid-template-columns: 1fr 280px; gap: 0; min-height: calc(100vh - 140px); }
+  .main {
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    gap: 0;
+    flex: 1;
+    min-height: 0; /* flex child'ın küçülebilmesi için */
+    overflow: hidden;
+  }
 
   /* SCHEDULE TABLE */
-  .schedule-area { padding: 20px 32px 32px; overflow-x: auto; }
+  .schedule-area {
+    padding: 20px 32px 32px;
+    overflow: auto; /* hem yatay hem dikey scroll */
+    height: 100%;
+  }
 
   .section-header {
     display: flex; align-items: center; justify-content: space-between;
@@ -168,6 +184,9 @@
     background: var(--surface);
     border-bottom: 2px solid var(--border);
     text-align: center;
+    position: sticky;
+    top: 0;
+    z-index: 5;
   }
   .schedule-table th:first-child { text-align: left; padding-left: 16px; border-radius: 12px 0 0 0; min-width: 160px; }
   .schedule-table th:last-child { border-radius: 0 12px 0 0; }
@@ -289,6 +308,8 @@
     border-left: 1px solid var(--border);
     background: var(--surface);
     display: flex; flex-direction: column;
+    overflow-y: auto;
+    min-height: 0;
   }
 
   .sidebar-section {
@@ -557,9 +578,15 @@
   .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
 
   /* ── PERSONEL PANEL ── */
-  #personnelView { display: none; padding: 24px 32px; }
+  #personnelView { display: none; padding: 24px 32px; flex: 1; overflow-y: auto; min-height: 0; }
   
-  #scheduleView { display: block; }
+  #scheduleView {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow: hidden; /* içerik .main içinde scroll eder */
+    min-height: 0;
+  }
   
 
   .personnel-grid {
@@ -1232,7 +1259,7 @@
 </div>
 
 <!-- PUANTAJ VIEW -->
-<div id="puantajView" style="display:none;padding:24px 32px"></div>
+<div id="puantajView" style="display:none;padding:24px 32px;flex:1;overflow-y:auto;min-height:0"></div>
 <div id="eskiPersonelView" style="display:none;padding:24px 32px"></div>
 
 <!-- TAKVIM VIEW -->
