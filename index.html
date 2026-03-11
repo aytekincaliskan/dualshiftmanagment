@@ -147,6 +147,38 @@
   /* SCHEDULE TABLE */
   .schedule-area { padding: 20px 32px 32px; overflow-x: auto; }
 
+  /* Floating sticky gün bar */
+  #stickyDayBar {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 85;
+    background: rgba(10,14,26,0.97);
+    backdrop-filter: blur(12px);
+    border-bottom: 2px solid var(--border);
+    padding: 0 32px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  }
+  #stickyDayBar table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    min-width: 900px;
+    table-layout: fixed;
+  }
+  #stickyDayBar th {
+    padding: 8px 8px;
+    font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    color: var(--text2);
+    text-align: center;
+  }
+  #stickyDayBar th:first-child { text-align: left; padding-left: 16px; width: 160px; color: var(--text3); font-size:10px; }
+  #stickyDayBar .day-header { font-size: 13px; font-weight: 700; color: var(--text); display: block; }
+  #stickyDayBar .date-header { font-size: 10px; color: var(--text3); display: block; }
+  #stickyDayBar .today-col .day-header { color: var(--accent); }
+  #stickyDayBar .today-col { border-bottom: 2px solid var(--accent); }
+
   .section-header {
     display: flex; align-items: center; justify-content: space-between;
     margin-bottom: 16px;
@@ -168,9 +200,6 @@
     background: var(--surface);
     border-bottom: 2px solid var(--border);
     text-align: center;
-    position: sticky;
-    top: 109px; /* header(61px) + tab-bar(48px) */
-    z-index: 9;
   }
   .schedule-table th:first-child { text-align: left; padding-left: 16px; border-radius: 12px 0 0 0; min-width: 160px; }
   .schedule-table th:last-child { border-radius: 0 12px 0 0; }
@@ -549,7 +578,6 @@
     padding: 0 32px;
     border-bottom: 1px solid var(--border);
     background: var(--bg);
-    position: sticky; top: 61px; z-index: 90;
   }
   .tab-btn {
     padding: 12px 18px; font-family: inherit; font-size: 13px; font-weight: 600;
@@ -1132,6 +1160,11 @@
 </div>
 
 <!-- STATS BAR -->
+<!-- Floating sticky gün başlıkları -->
+<div id="stickyDayBar">
+  <table><thead id="stickyDayHead"></thead></table>
+</div>
+
 <div id="scheduleView">
 <div style="display:flex;justify-content:flex-end;padding:8px 24px 0">
   <button class="btn btn-ghost" style="font-size:11px" onclick="exportExcel('vardiya')">📥 Excel</button>
@@ -1674,6 +1707,7 @@ function showApp() {
   updateRoleBadge();
   updateTabVisibility();
   setSyncStatus('local');
+  setTimeout(initStickyDayBar, 100); // scroll listener'ı kur
 }
 // Eski fonksiyon isimleri — geriye uyumluluk için
 function promptLogin() { showLoginScreen(); }
@@ -1918,6 +1952,9 @@ function render() {
     tr.appendChild(t);
   });
   head.appendChild(tr);
+
+  // Sticky day bar'ı da güncelle (aynı içerik)
+  updateStickyDayBar(week, todayStr);
 
   // Build body
   const body = document.getElementById('tableBody');
@@ -2188,6 +2225,82 @@ function saveEmployee() {
 // ============================================================
 // AUTO ASSIGN
 // ============================================================
+
+// ── STICKY GÜN BAŞLIK BARI ────────────────────────────────────────────
+function updateStickyDayBar(week, todayStr) {
+  const sHead = document.getElementById('stickyDayHead');
+  if (!sHead) return;
+  sHead.innerHTML = '';
+  const tr = document.createElement('tr');
+
+  // İlk sütun: "ÇALIŞAN" placeholder
+  const th0 = document.createElement('th');
+  th0.textContent = '↕ HAFTALIK PROGRAM';
+  tr.appendChild(th0);
+
+  week.dates.forEach((d, i) => {
+    const isToday = d === todayStr;
+    const th = document.createElement('th');
+    th.className = isToday ? 'today-col' : '';
+    th.innerHTML = `<span class="day-header">${week.dayNames[i]}${isToday ? '<span class="today-indicator"></span>' : ''}</span><span class="date-header">${d}</span>`;
+    tr.appendChild(th);
+  });
+  sHead.appendChild(tr);
+}
+
+function initStickyDayBar() {
+  const bar   = document.getElementById('stickyDayBar');
+  const table = document.getElementById('scheduleTable');
+  if (!bar || !table) return;
+
+  // scheduleTable'ın sütun genişliklerini kopyala
+  function syncWidths() {
+    const mainThs = document.querySelectorAll('#tableHead th');
+    const stickyThs = document.querySelectorAll('#stickyDayHead th');
+    mainThs.forEach((th, i) => {
+      if (stickyThs[i]) stickyThs[i].style.width = th.offsetWidth + 'px';
+    });
+    // Tablonun sol offsetini al
+    const areaEl = document.querySelector('.schedule-area');
+    if (areaEl) {
+      bar.style.paddingLeft = '32px';
+    }
+  }
+
+  window.addEventListener('scroll', () => {
+    const rect = table.getBoundingClientRect();
+    const thead = document.getElementById('tableHead');
+    const theadRect = thead ? thead.getBoundingClientRect() : rect;
+
+    if (theadRect.bottom < 0) {
+      // thead görünmüyor — bar'ı göster
+      if (bar.style.display === 'none' || !bar.style.display) {
+        bar.style.display = 'block';
+        syncWidths();
+      }
+      // Yatay scroll senkronize et
+      const area = document.querySelector('.schedule-area');
+      if (area) {
+        const barTable = bar.querySelector('table');
+        if (barTable) barTable.style.marginLeft = -area.scrollLeft + 'px';
+      }
+    } else {
+      bar.style.display = 'none';
+    }
+  });
+
+  // Yatay scroll'da bar'ı senkronize et
+  const area = document.querySelector('.schedule-area');
+  if (area) {
+    area.addEventListener('scroll', () => {
+      if (bar.style.display !== 'none') {
+        const barTable = bar.querySelector('table');
+        if (barTable) barTable.style.marginLeft = -area.scrollLeft + 'px';
+      }
+    });
+  }
+}
+
 function clearWeekConfirm() {
   const week = getWeekByOffset(currentWeekOffset);
   const [dd, mm] = week.dates[0].split('.');
