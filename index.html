@@ -885,12 +885,22 @@
     display: inline-block; padding: 2px 8px; border-radius: 20px;
     font-size: 10px; font-weight: 700;
   }
-  .status-calisma { background: rgba(16,185,129,0.12); color: var(--green); border: 1px solid rgba(16,185,129,0.3); }
-  .status-hafizin { background: rgba(239,68,68,0.12); color: var(--red); border: 1px solid rgba(239,68,68,0.3); }
-  .status-ucrsizizin { background: rgba(245,158,11,0.12); color: var(--orange); border: 1px solid rgba(245,158,11,0.3); }
-  .status-saglikraporu { background: rgba(124,58,237,0.12); color: var(--accent2); border: 1px solid rgba(124,58,237,0.3); }
-  .status-resmitatil { background: rgba(79,142,247,0.12); color: var(--accent); border: 1px solid rgba(79,142,247,0.3); }
-  .status-devamsizlik { background: rgba(239,68,68,0.2); color: var(--red); border: 1px solid var(--red); }
+  /* Çalışma */
+  .status-calisma     { background:rgba(16,185,129,0.12);  color:var(--green);   border:1px solid rgba(16,185,129,0.3); }
+  /* Ücretli izinler */
+  .status-yillik      { background:rgba(79,142,247,0.14);  color:#60a5fa;        border:1px solid rgba(79,142,247,0.35); }
+  .status-saglik      { background:rgba(124,58,237,0.12);  color:#a78bfa;        border:1px solid rgba(124,58,237,0.3); }
+  .status-mazeret     { background:rgba(20,184,166,0.12);  color:#2dd4bf;        border:1px solid rgba(20,184,166,0.3); }
+  .status-idari       { background:rgba(99,102,241,0.12);  color:#818cf8;        border:1px solid rgba(99,102,241,0.3); }
+  .status-resmitatil  { background:rgba(79,142,247,0.12);  color:var(--accent);  border:1px solid rgba(79,142,247,0.3); }
+  .status-hafizin     { background:rgba(148,163,184,0.12); color:#94a3b8;        border:1px solid rgba(148,163,184,0.3); }
+  /* Kesintili / Ücretsiz */
+  .status-ucrsizizin  { background:rgba(245,158,11,0.12);  color:var(--orange);  border:1px solid rgba(245,158,11,0.3); }
+  .status-hastalik-u  { background:rgba(239,68,68,0.10);   color:#f87171;        border:1px solid rgba(239,68,68,0.25); }
+  .status-yarimgun    { background:rgba(245,158,11,0.08);  color:#fbbf24;        border:1px dashed rgba(245,158,11,0.4); }
+  .status-devamsizlik { background:rgba(239,68,68,0.20);   color:var(--red);     border:1px solid var(--red); }
+  /* Eski uyumluluk */
+  .status-saglikraporu { background:rgba(124,58,237,0.12); color:#a78bfa;        border:1px solid rgba(124,58,237,0.3); }
 
   /* Salary section */
   .salary-section {
@@ -2173,27 +2183,164 @@ function saveEmployee() {
 // AUTO ASSIGN
 // ============================================================
 function showAutoAssign() {
+  // Modal ile mod seç
+  let m = document.getElementById('autoAssignModal');
+  if (!m) {
+    m = document.createElement('div');
+    m.id = 'autoAssignModal';
+    m.className = 'modal-overlay';
+    document.body.appendChild(m);
+  }
   const week = getWeekByOffset(currentWeekOffset);
+  m.innerHTML = `
+    <div class="modal" style="width:460px">
+      <div class="modal-title">⚡ Otomatik Vardiya Atama</div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:14px">
+
+        <div style="background:rgba(79,142,247,0.07);border:1px solid rgba(79,142,247,0.2);border-radius:12px;padding:16px">
+          <div style="font-size:13px;font-weight:700;margin-bottom:6px">📋 Mod 1 — Mağaza Saatine Göre</div>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:12px">
+            Her çalışan kendi mağazasının açılış→kapanış saatinde çalışır.<br>
+            Haftalık izin günü için gün seçin:
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
+            <label style="font-size:11px;color:var(--text2)">İzin günü:</label>
+            <select class="form-input" id="aa_izinGun" style="width:140px;padding:6px">
+              <option value="2">Çarşamba</option>
+              <option value="0">Pazartesi</option>
+              <option value="1">Salı</option>
+              <option value="3">Perşembe</option>
+              <option value="4">Cuma</option>
+              <option value="5">Cumartesi</option>
+              <option value="6">Pazar</option>
+            </select>
+            <label style="font-size:11px;color:var(--text2)">İzin tipi:</label>
+            <select class="form-input" id="aa_izinTip" style="width:130px;padding:6px">
+              <option value="hafizin">Haftalık İzin</option>
+              <option value="yillikizin">Yıllık İzin</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" style="width:100%" onclick="autoAssignMod1()">▶ Uygula</button>
+        </div>
+
+        <div style="background:rgba(16,185,129,0.07);border:1px solid rgba(16,185,129,0.2);border-radius:12px;padding:16px">
+          <div style="font-size:13px;font-weight:700;margin-bottom:6px">🔄 Mod 2 — Akıllı Dağıtım</div>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:12px">
+            Kurallar:<br>
+            • Her çalışan haftada 1 gün izin<br>
+            • Aynı şubeden aynı gün max <strong>1 kişi</strong> izin<br>
+            • Tüm hafta her şubede en az 1 kişi aktif<br>
+            • Saatler mağaza açılış→kapanışına göre
+          </div>
+          <button class="btn btn-ghost" style="width:100%;color:var(--green);border-color:rgba(16,185,129,0.3)" onclick="autoAssignMod2()">▶ Uygula</button>
+        </div>
+
+      </div>
+      <div class="modal-footer" style="margin-top:12px">
+        <button class="btn btn-ghost" onclick="document.getElementById('autoAssignModal').classList.remove('open')">Kapat</button>
+      </div>
+    </div>`;
+  m.classList.add('open');
+}
+
+function autoAssignMod1() {
+  const week = getWeekByOffset(currentWeekOffset);
+  const izinGunIdx = parseInt(document.getElementById('aa_izinGun').value); // 0=Pzt
+  const izinTip    = document.getElementById('aa_izinTip').value;
   let assigned = 0;
-  employees.forEach(emp => {
+
+  employees.filter(e => e.status !== 'pasif' && activeLocations.has(e.loc)).forEach(emp => {
+    const sh = storeHours[emp.loc] || {};
+    const acilis  = sh.acilis  || '09:00';
+    const kapanis = sh.kapanis || '18:00';
+
     week.dates.forEach((dateStr, i) => {
-      const existing = getShift(emp.id, dateStr);
-      if (!existing) {
-        // Simple rule: 1 day off per week, rest 11-18 or 11-21 alternating
-        const empShifts = week.dates.filter(d => getShift(emp.id, d));
-        const hasLeave = week.dates.some(d => { const s = getShift(emp.id, d); return s && s.type === 'leave'; });
-        if (!hasLeave && i === 2) {
-          setShift(emp.id, dateStr, {type:'leave'});
-        } else {
-          const out = i % 2 === 0 ? '21:00' : '18:00';
-          setShift(emp.id, dateStr, {type:'normal', in:'11:00', out});
-        }
-        assigned++;
+      if (getShift(emp.id, dateStr)) return; // dolu, atla
+      // Pzt=0 … Paz=6 — dateStr "dd.mm" formatı
+      const [dd, mm] = dateStr.split('.');
+      const d = new Date(week.weekKey.split('-W')[0], parseInt(mm)-1, parseInt(dd));
+      const dow = (d.getDay() + 6) % 7; // Pzt=0
+
+      if (dow === izinGunIdx) {
+        setShift(emp.id, dateStr, { type: izinTip });
+      } else {
+        setShift(emp.id, dateStr, { type: 'normal', in: acilis, out: kapanis });
+      }
+      assigned++;
+    });
+  });
+
+  document.getElementById('autoAssignModal').classList.remove('open');
+  render(); saveData();
+  showCloudToast('⚡ Mod 1: ' + assigned + ' slot dolduruldu');
+}
+
+function autoAssignMod2() {
+  const week = getWeekByOffset(currentWeekOffset);
+  const aktifEmps = employees.filter(e => e.status !== 'pasif' && activeLocations.has(e.loc));
+  let assigned = 0;
+
+  // Her gün için hangi şubeden kaç kişi izin aldığını takip et
+  const izinSayaci = {}; // dateStr → { loc: count }
+  week.dates.forEach(d => { izinSayaci[d] = {}; });
+
+  // Önce mevcut izinleri sayacağa ekle
+  aktifEmps.forEach(emp => {
+    week.dates.forEach(dateStr => {
+      const s = getShift(emp.id, dateStr);
+      if (s && s.type !== 'normal') {
+        izinSayaci[dateStr][emp.loc] = (izinSayaci[dateStr][emp.loc] || 0) + 1;
       }
     });
   });
-  render();
-  alert(`⚡ ${assigned} boş slot otomatik dolduruldu!\n\nKural: Her çalışana Çarşamba izni, diğer günler 11:00 başlangıç (gün aşırı 18:00/21:00 çıkış)`);
+
+  // Şube bazlı personel sayısı
+  const locEmpCount = {};
+  aktifEmps.forEach(e => { locEmpCount[e.loc] = (locEmpCount[e.loc] || 0) + 1; });
+
+  aktifEmps.forEach(emp => {
+    const sh = storeHours[emp.loc] || {};
+    const acilis  = sh.acilis  || '09:00';
+    const kapanis = sh.kapanis || '18:00';
+    const toplamEmp = locEmpCount[emp.loc] || 1;
+
+    // Bu çalışanın haftada izin günü var mı?
+    const hasIzin = week.dates.some(d => {
+      const s = getShift(emp.id, d);
+      return s && s.type !== 'normal';
+    });
+
+    week.dates.forEach((dateStr, i) => {
+      if (getShift(emp.id, dateStr)) return; // dolu
+
+      const [dd, mm] = dateStr.split('.');
+      const d = new Date(parseInt(week.weekKey.split('-W')[0]), parseInt(mm)-1, parseInt(dd));
+      const dow = (d.getDay() + 6) % 7; // Pzt=0
+
+      // Hafta sonu (Cmt/Paz) — çalışma
+      if (dow >= 5) {
+        setShift(emp.id, dateStr, { type: 'normal', in: acilis, out: kapanis });
+        assigned++;
+        return;
+      }
+
+      // İzin kural: henüz izin almamış + aynı günde aynı şubeden max 1 kişi + şubede en az 1 kişi aktif kalmalı
+      const locIzinToday = izinSayaci[dateStr][emp.loc] || 0;
+      const canIzin = !hasIzin && locIzinToday < 1 && toplamEmp > 1;
+
+      if (canIzin) {
+        setShift(emp.id, dateStr, { type: 'hafizin' });
+        izinSayaci[dateStr][emp.loc] = locIzinToday + 1;
+      } else {
+        setShift(emp.id, dateStr, { type: 'normal', in: acilis, out: kapanis });
+      }
+      assigned++;
+    });
+  });
+
+  document.getElementById('autoAssignModal').classList.remove('open');
+  render(); saveData();
+  showCloudToast('🔄 Mod 2: ' + assigned + ' slot akıllı dağıtıldı');
 }
 
 // ============================================================
@@ -2609,6 +2756,93 @@ async function hrBulutaKaydet() {
   }
 }
 
+
+function renderIzinTipleriPanel() {
+  const panel = document.getElementById('izinTipleriPanel');
+  if (!panel) return;
+
+  const sabitler = Object.entries(DAY_STATUS).filter(([k,v]) => k !== 'bosta');
+  const ozelArr  = loadOzelIzinler();
+
+  const satirHtml = (k, v, sililebilir) =>
+    '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:6px">' +
+      '<div style="display:flex;align-items:center;gap:8px">' +
+        '<span>' + (v.icon||'📌') + '</span>' +
+        '<div><div style="font-size:13px;font-weight:600">' + v.label + '</div>' +
+        '<div style="font-size:10px;color:var(--text3);font-family:monospace">' + k + '</div></div>' +
+      '</div>' +
+      '<div style="display:flex;gap:6px;align-items:center">' +
+        (v.kesinti > 0
+          ? '<span style="font-size:11px;background:rgba(239,68,68,0.1);color:var(--red);padding:2px 8px;border-radius:6px">-' + (v.kesinti===0.5?'½':v.kesinti) + ' gün</span>'
+          : '<span style="font-size:11px;background:rgba(16,185,129,0.1);color:var(--green);padding:2px 8px;border-radius:6px">Ücretli</span>') +
+        (sililebilir ? '<button onclick="ozelIzinSil('' + k + '')" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;padding:0 4px">×</button>' : '') +
+      '</div>' +
+    '</div>';
+
+  panel.innerHTML =
+    '<div style="font-size:12px;color:var(--text2);margin-bottom:14px">Sistem izin tipleri + kendi oluşturduklarınız. Ücretliler maaştan kesilmez, kesintililer düşülür.</div>' +
+
+    '<div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Sistem İzin Tipleri</div>' +
+    sabitler.map(([k,v]) => satirHtml(k, v, false)).join('') +
+
+    (ozelArr.length > 0
+      ? '<div style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin:14px 0 8px">Özel İzin Tipleri</div>' +
+        ozelArr.map(o => satirHtml(o.key, o, true)).join('')
+      : '') +
+
+    '<div style="border-top:1px solid var(--border);padding-top:14px;margin-top:14px">' +
+      '<div style="font-size:12px;font-weight:700;margin-bottom:10px">➕ Yeni İzin Tipi Ekle</div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">' +
+        '<div><label style="font-size:10px;color:var(--text3);display:block;margin-bottom:3px">İzin Adı</label>' +
+          '<input class="form-input" id="yeniIzinAd" placeholder="örn: Doğum İzni"></div>' +
+        '<div><label style="font-size:10px;color:var(--text3);display:block;margin-bottom:3px">Kod (boşluksuz)</label>' +
+          '<input class="form-input" id="yeniIzinKey" placeholder="örn: dogumizni"></div>' +
+        '<div><label style="font-size:10px;color:var(--text3);display:block;margin-bottom:3px">Tür</label>' +
+          '<select class="form-input" id="yeniIzinTur">' +
+            '<option value="ucretli">✅ Ücretli (kesintisiz)</option>' +
+            '<option value="ucretsiztam">🔴 Ücretsiz (1 tam gün kesilir)</option>' +
+            '<option value="ucretsizYarim">🟠 Ücretsiz (0.5 gün kesilir)</option>' +
+          '</select></div>' +
+        '<div><label style="font-size:10px;color:var(--text3);display:block;margin-bottom:3px">İkon (emoji)</label>' +
+          '<input class="form-input" id="yeniIzinIkon" placeholder="📌" maxlength="2"></div>' +
+      '</div>' +
+      '<button class="btn btn-primary" style="width:100%" onclick="ozelIzinEkle()">+ Ekle</button>' +
+    '</div>';
+}
+
+function ozelIzinEkle() {
+  const ad  = (document.getElementById('yeniIzinAd')?.value  || '').trim();
+  const key = (document.getElementById('yeniIzinKey')?.value || '').trim().replace(/\s+/g,'').toLowerCase();
+  const tur = document.getElementById('yeniIzinTur')?.value || 'ucretli';
+  const ikon= document.getElementById('yeniIzinIkon')?.value || '📌';
+
+  if (!ad || !key) { alert('İzin adı ve kod zorunlu'); return; }
+  if (DAY_STATUS[key]) { alert('Bu kod zaten kullanımda: ' + key); return; }
+  if (!/^[a-z0-9_]+$/.test(key)) { alert('Kod sadece küçük harf, rakam ve _ içerebilir'); return; }
+
+  const paid    = tur === 'ucretli';
+  const kesinti = tur === 'ucretsiztam' ? 1 : tur === 'ucretsizYarim' ? 0.5 : 0;
+  const yeni = { key, label: ad, icon: ikon, paid, kesinti,
+    cls: paid ? 'status-yillik' : 'status-ucrsizizin',
+    group: paid ? 'izin' : 'kesinti' };
+
+  const arr = loadOzelIzinler();
+  arr.push(yeni);
+  saveOzelIzinler(arr);
+  DAY_STATUS[key] = yeni; // runtime'a da ekle
+
+  renderIzinTipleriPanel();
+  showCloudToast('✅ "' + ad + '" izin tipi eklendi');
+}
+
+function ozelIzinSil(key) {
+  if (!confirm('"' + DAY_STATUS[key]?.label + '" tipini silmek istediğinizden emin misiniz?')) return;
+  const arr = loadOzelIzinler().filter(o => o.key !== key);
+  saveOzelIzinler(arr);
+  delete DAY_STATUS[key];
+  renderIzinTipleriPanel();
+  showCloudToast('🗑️ İzin tipi silindi');
+}
 function kurtarHRdenBulut() {
   const log = document.getElementById('kurtarmaLog');
   log.textContent = 'Supabase\'e bağlanıyor...';
@@ -3671,17 +3905,54 @@ function formatPhone(val) {
 }
 
 const DAY_STATUS = {
-  'calisma':     { label: 'Çalışma',          cls: 'status-calisma',      paid: true,  kesinti: 0      },
-  'yillikizin':  { label: 'Yıllık İzin',      cls: 'status-resmitatil',   paid: true,  kesinti: 0      },
-  'idariizin':   { label: 'İdari İzin',        cls: 'status-saglikraporu', paid: true,  kesinti: 0      },
-  'saglikraporu':{ label: 'Sağlık Raporu',     cls: 'status-saglikraporu', paid: true,  kesinti: 0      },
-  'resmitatil':  { label: 'Resmi Tatil',       cls: 'status-resmitatil',   paid: true,  kesinti: 0      },
-  'ucrsizizin':  { label: 'Ücretsiz İzin',     cls: 'status-ucrsizizin',   paid: false, kesinti: 1      },
-  'yarimgun':    { label: 'Yarım Gün İzin',    cls: 'status-ucrsizizin',   paid: false, kesinti: 0.5    },
-  'hafizin':     { label: 'Haftalık İzin',     cls: 'status-hafizin',      paid: true,  kesinti: 0      },
-  'devamsizlik': { label: 'Devamsızlık',       cls: 'status-devamsizlik',  paid: false, kesinti: 1      },
-  'bosta':       { label: '—',                 cls: '',                    paid: false, kesinti: 0      },
+  // ── Çalışma ──────────────────────────────────────────────────
+  'calisma':        { label: 'Çalışma',              icon: '💼', cls: 'status-calisma',      paid: true,  kesinti: 0,   group: 'calisma'  },
+  // ── Ücretli İzinler ──────────────────────────────────────────
+  'yillikizin':     { label: 'Yıllık İzin',          icon: '🏖️', cls: 'status-yillik',       paid: true,  kesinti: 0,   group: 'izin'     },
+  'hastalikucretli':{ label: 'Hastalık',              icon: '🏥', cls: 'status-saglik',       paid: true,  kesinti: 0,   group: 'izin'     },
+  'mazeretizin':    { label: 'Mazeret İzni',          icon: '📋', cls: 'status-mazeret',      paid: true,  kesinti: 0,   group: 'izin'     },
+  'idariizin':      { label: 'İdari İzin',            icon: '🏛️', cls: 'status-idari',        paid: true,  kesinti: 0,   group: 'izin'     },
+  'resmitatil':     { label: 'Resmi Tatil',           icon: '🎌', cls: 'status-resmitatil',   paid: true,  kesinti: 0,   group: 'izin'     },
+  'hafizin':        { label: 'Haftalık İzin',         icon: '📅', cls: 'status-hafizin',      paid: true,  kesinti: 0,   group: 'izin'     },
+  // ── Ücretsiz / Kesintili ─────────────────────────────────────
+  'ucrsizizin':     { label: 'Ücretsiz İzin',         icon: '🔴', cls: 'status-ucrsizizin',   paid: false, kesinti: 1,   group: 'kesinti'  },
+  'hastalikucretsiz':{ label: 'Hastalık (-)',         icon: '🤒', cls: 'status-hastalik-u',   paid: false, kesinti: 1,   group: 'kesinti'  },
+  'yarimgun':       { label: 'Yarım Gün İzin',        icon: '⏰', cls: 'status-yarimgun',     paid: false, kesinti: 0.5, group: 'kesinti'  },
+  'devamsizlik':    { label: 'Devamsızlık',            icon: '❌', cls: 'status-devamsizlik',  paid: false, kesinti: 1,   group: 'kesinti'  },
+  // ── Boş ──────────────────────────────────────────────────────
+  'bosta':          { label: '—',                     icon: '',   cls: '',                    paid: false, kesinti: 0,   group: 'bosta'   },
 };
+
+// Kullanıcı tanımlı izin tipleri — localStorage'da saklanır
+function loadOzelIzinler() {
+  try { return JSON.parse(localStorage.getItem('dual_izin_tipleri') || '[]'); } catch(e) { return []; }
+}
+function saveOzelIzinler(arr) {
+  localStorage.setItem('dual_izin_tipleri', JSON.stringify(arr));
+}
+
+// Tüm izin tiplerini döndür (sabit + özel)
+function getIzinTipleri() {
+  const sabit = Object.entries(DAY_STATUS)
+    .filter(([k]) => k !== 'calisma' && k !== 'bosta')
+    .map(([k, v]) => ({ key: k, ...v, ozel: false }));
+  const ozel = loadOzelIzinler().map(o => ({ ...o, ozel: true }));
+  return [...sabit, ...ozel];
+}
+
+// Özel izin tipini DAY_STATUS'a runtime'da ekle
+function applyOzelIzinler() {
+  loadOzelIzinler().forEach(o => {
+    if (!DAY_STATUS[o.key]) {
+      DAY_STATUS[o.key] = {
+        label: o.label, icon: o.icon || '📌',
+        cls: o.paid ? 'status-yillik' : 'status-ucrsizizin',
+        paid: o.paid, kesinti: o.paid ? 0 : (o.kesinti || 1),
+        group: o.paid ? 'izin' : 'kesinti'
+      };
+    }
+  });
+}
 
 let puantajEmpId = null;
 let puantajDraft = null; // kaydedilmemiş puantaj değişiklikleri
@@ -3808,7 +4079,9 @@ function renderPuantajBody() {
   let toplamKesinti = 0; // kesinti katsayısı (1 = tam gün, 0.5 = yarım gün)
   let izinSayilari = { yillikizin:0, idariizin:0, saglikraporu:0, resmitatil:0, ucrsizizin:0, yarimgun:0, devamsizlik:0 };
 
-  const normalHour = parseFloat(hr.gunlukSaat || 8);
+  const normalHour       = parseFloat(hr.gunlukSaat || 8);
+  const haftalikStandart = parseFloat(puan.s_haftalikSaat ?? hr.haftalikSaat ?? 45);
+  const aylikStandartSaat = haftalikStandart * (52 / 12); // aylık standart saat
 
   days.forEach(({d, isWeekend}) => {
     const status = dayData[d]?.status || (isWeekend ? 'bosta' : 'calisma');
@@ -3819,7 +4092,6 @@ function renderPuantajBody() {
       calismaGun++;
       const h = (gIn && gOut) ? calcHours(gIn, gOut) : normalHour;
       calismaHour += h;
-      if (h > normalHour) mesaiHour += (h - normalHour);
     }
     if (izinSayilari.hasOwnProperty(status)) izinSayilari[status]++;
 
@@ -3843,8 +4115,9 @@ function renderPuantajBody() {
   // Kesinti tutarı
   const kesintiTutar = toplamKesinti * gunlukNet;
 
-  // Mesai ücreti (net × 1.5)
-  const mesaiUcret = mesaiHour * mesaiSaatlik * 1.5;
+  // Mesai = aylık standart saatin üzerindeki çalışma
+  const efektifMesaiHour = Math.max(0, calismaHour - aylikStandartSaat);
+  const mesaiUcret = efektifMesaiHour * mesaiSaatlik * 1.5;
 
   // Primler
   const primler = puan.primler || [];
@@ -3872,7 +4145,7 @@ function renderPuantajBody() {
         <div class="puantaj-card-lbl">Çalışma Saati</div>
       </div>
       <div class="puantaj-card">
-        <div class="puantaj-card-val" style="color:var(--orange)">${mesaiHour.toFixed(1)}</div>
+        <div class="puantaj-card-val" style="color:var(--orange)">${efektifMesaiHour.toFixed(1)}</div>
         <div class="puantaj-card-lbl">Mesai Saati</div>
       </div>
       <div class="puantaj-card">
@@ -3931,6 +4204,11 @@ function renderPuantajBody() {
           <label class="salary-label">Günlük Normal Saat</label>
           <input class="salary-input" id="s_gunlukSaat" type="number" placeholder="8"
             value="${hr.gunlukSaat||8}" min="1" max="12" oninput="recalcSalary()">
+        </div>
+        <div class="salary-field">
+          <label class="salary-label">Haftalık Standart Saat <span style="font-size:10px;color:var(--text3)">(mesai eşiği)</span></label>
+          <input class="salary-input" id="s_haftalikSaat" type="number" placeholder="45"
+            value="${puan.s_haftalikSaat ?? hr.haftalikSaat ?? 45}" min="20" max="60" oninput="recalcSalary()">
         </div>
         <div class="salary-field" style="background:rgba(16,185,129,0.05);border:1px solid rgba(16,185,129,0.2);border-radius:8px;padding:8px">
           <label class="salary-label" style="color:var(--green)">Günlük Net Ücret</label>
@@ -4014,7 +4292,7 @@ function renderPuantajBody() {
           <span class="salary-total-val" style="color:var(--accent)">+${yolParasi.toLocaleString('tr-TR',{maximumFractionDigits:0})}₺</span>
         </div>` : ''}
         ${mesaiUcret > 0 ? `<div class="salary-total-row">
-          <span class="salary-total-lbl">Mesai (${mesaiHour.toFixed(1)}s × net ÷ 30saat × 1.5)</span>
+          <span class="salary-total-lbl">Mesai (${efektifMesaiHour.toFixed(1)}s × net ÷ 30saat × 1.5) <span style="font-size:10px;color:var(--text3)">Standart: ${haftalikStandart}s/hafta</span></span>
           <span class="salary-total-val" style="color:var(--orange)">+${mesaiUcret.toLocaleString('tr-TR',{maximumFractionDigits:0})}₺</span>
         </div>` : ''}
         ${toplamPrim > 0 ? `<div class="salary-total-row">
@@ -4198,6 +4476,8 @@ function savePuantajData() {
     if (el && el.value !== '') puan['s_' + f] = parseFloat(el.value);
     else delete puan['s_' + f];
   });
+  const hsEl = document.getElementById('s_haftalikSaat');
+  if (hsEl && hsEl.value !== '') { puan.s_haftalikSaat = parseFloat(hsEl.value); hr.haftalikSaat = parseFloat(hsEl.value); }
   const hy = document.getElementById('hesapYontemi');
   if (hy) hr.hesapYontemi = hy.value;
   saveEmpHR(puantajEmpId, hr);
@@ -4470,7 +4750,7 @@ function getStoreHoursAlerts() {
 // TAKVİM MODULE
 // ============================================================
 const TR_MONTHS = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
-const TR_DAYS_SHORT = ['Paz','Pzt','Sal','Çar','Per','Cum','Cmt'];
+const TR_DAYS_SHORT = ['Pzt','Sal','Çar','Per','Cum','Cmt','Paz']; // Pazartesi'den başlar
 const LOC_COLORS = ['#4f8ef7','#10b981','#f59e0b','#a78bfa','#f472b6','#34d399','#fb923c'];
 
 // Resmi tatiller (Türkiye)
@@ -4534,7 +4814,7 @@ function renderTakvim() {
         </div>
         <div class="takvim-grid-wrap">
           <div class="takvim-day-headers">
-            ${TR_DAYS_SHORT.map((d,i)=>`<div class="takvim-day-hdr ${i===0||i===6?'weekend':''}">${d}</div>`).join('')}
+            ${TR_DAYS_SHORT.map((d,i)=>`<div class="takvim-day-hdr ${i>=5?'weekend':''}">${d}</div>`).join('')}
           </div>
           <div class="takvim-cells" id="takvimCells"></div>
         </div>
@@ -4764,8 +5044,9 @@ async function deleteUser(uname) {
 }
 
 function switchStab(n) {
-  if (n === 4) refreshLocalInfo();
-  [1,2,3,4].forEach(i => {
+  if (n === 4) renderIzinTipleriPanel();
+  if (n === 5) refreshLocalInfo();
+  [1,2,3,4,5].forEach(i => {
     const body = document.getElementById('stabBody'+i);
     const tab  = document.getElementById('stab'+i);
     if (body) body.style.display = i===n?'':'none';
@@ -5022,7 +5303,8 @@ async function loadCloudData() {
         const rows2 = await res2.json();
         if (rows2 && rows2.length) lastUpdatedAt = rows2[0].updated_at;
       } catch(e) {}
-      startPolling();
+      applyOzelIzinler(); // özel izin tiplerini DAY_STATUS'a ekle
+  startPolling();
     } else {
       setSyncStatus('offline');
     }
@@ -5116,7 +5398,8 @@ initApp();
       <button class="drawer-tab active" id="stab1" onclick="switchStab(1)" style="font-size:12px">🏪 Lokasyonlar</button>
       <button class="drawer-tab" id="stab2" onclick="switchStab(2)" style="font-size:12px">🕐 Mağaza Saatleri</button>
       <button class="drawer-tab" id="stab3" onclick="switchStab(3)" style="font-size:12px">👥 Kullanıcılar</button>
-      <button class="drawer-tab" id="stab4" onclick="switchStab(4)" style="font-size:12px">🛟 Veri Kurtarma</button>
+      <button class="drawer-tab" id="stab4" onclick="switchStab(4)" style="font-size:12px">📅 İzin Tipleri</button>
+      <button class="drawer-tab" id="stab5" onclick="switchStab(5)" style="font-size:12px">🛟 Veri Kurtarma</button>
     </div>
     <!-- Tab 1: Lokasyonlar -->
     <div id="stabBody1" style="flex:1;overflow-y:auto">
@@ -5151,8 +5434,12 @@ initApp();
         <button class="btn btn-green" style="width:100%" onclick="addUser()">+ Kullanıcı Ekle</button>
       </div>
     </div>
-    <!-- Tab 4: Veri Kurtarma -->
+    <!-- Tab 4: İzin Tipleri -->
     <div id="stabBody4" style="display:none;flex:1;overflow-y:auto">
+      <div id="izinTipleriPanel"></div>
+    </div>
+    <!-- Tab 5: Veri Kurtarma -->
+    <div id="stabBody5" style="display:none;flex:1;overflow-y:auto">
       <div style="display:flex;flex-direction:column;gap:12px">
         <div style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.3);border-radius:10px;padding:14px;margin-bottom:10px">
           <div style="font-size:13px;font-weight:700;color:var(--green);margin-bottom:6px">⬆️ Özlük Verilerini Buluta Kaydet</div>
