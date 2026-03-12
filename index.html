@@ -32,8 +32,8 @@
     font-family: 'Space Grotesk', sans-serif;
     background: var(--bg);
     color: var(--text);
-    height: 100vh;
-    overflow: hidden; /* scroll yok — içerik kendi scroll eder */
+    min-height: 100vh;
+    overflow-x: hidden;
   }
 
   /* Background grid */
@@ -48,12 +48,7 @@
     z-index: 0;
   }
 
-  .wrapper {
-    position: relative; z-index: 1;
-    height: 100vh;
-    display: flex; flex-direction: column;
-    overflow: hidden;
-  }
+  .wrapper { position: relative; z-index: 1; }
 
   /* HEADER */
   header {
@@ -147,25 +142,14 @@
   .stat-lbl { font-size: 11px; color: var(--text2); margin-top: 2px; }
 
   /* MAIN LAYOUT */
-  .main {
-    display: grid;
-    grid-template-columns: 1fr 280px;
-    gap: 0;
-    flex: 1;
-    min-height: 0; /* flex child'ın küçülebilmesi için */
-    overflow: hidden;
-  }
+  .main { display: grid; grid-template-columns: 1fr 280px; gap: 0; min-height: calc(100vh - 140px); }
 
   /* SCHEDULE TABLE */
-  .schedule-area {
-    padding: 0 32px 32px;
-    overflow: auto;
-    height: 100%;
-  }
+  .schedule-area { padding: 20px 32px 32px; overflow-x: auto; }
 
   .section-header {
     display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 8px;
+    margin-bottom: 16px;
   }
   .section-title { font-size: 14px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: 1px; }
 
@@ -177,19 +161,16 @@
   }
 
   .schedule-table th {
-    padding: 13px 8px;
+    padding: 10px 8px;
     font-size: 11px; font-weight: 700;
     text-transform: uppercase; letter-spacing: 0.5px;
     color: var(--text2);
-    background: #0f1520;
+    background: var(--surface);
     border-bottom: 2px solid var(--border);
     text-align: center;
-    position: sticky;
-    top: 0;
-    z-index: 5;
   }
-  .schedule-table th:first-child { text-align: left; padding-left: 16px; border-radius: 0; min-width: 160px; }
-  .schedule-table th:last-child { border-radius: 0; }
+  .schedule-table th:first-child { text-align: left; padding-left: 16px; border-radius: 12px 0 0 0; min-width: 160px; }
+  .schedule-table th:last-child { border-radius: 0 12px 0 0; }
 
   .day-header { font-size: 13px; font-weight: 700; color: var(--text); display: block; }
   .date-header { font-size: 10px; color: var(--text3); display: block; }
@@ -308,8 +289,6 @@
     border-left: 1px solid var(--border);
     background: var(--surface);
     display: flex; flex-direction: column;
-    overflow-y: auto;
-    min-height: 0;
   }
 
   .sidebar-section {
@@ -578,15 +557,9 @@
   .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
 
   /* ── PERSONEL PANEL ── */
-  #personnelView { display: none; padding: 24px 32px; flex: 1; overflow-y: auto; min-height: 0; }
+  #personnelView { display: none; padding: 24px 32px; }
   
-  #scheduleView {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-    overflow: hidden; /* içerik .main içinde scroll eder */
-    min-height: 0;
-  }
+  #scheduleView { display: block; }
   
 
   .personnel-grid {
@@ -1137,7 +1110,6 @@
     </div>
     <button class="btn btn-ghost" onclick="showAutoAssign()">⚡ Otomatik Ata</button>
     <button class="btn btn-ghost" style="color:var(--red);border-color:rgba(239,68,68,0.3)" onclick="clearWeekConfirm()">🗑️ Haftayı Temizle</button>
-    <button class="btn btn-ghost" id="undoBtn" onclick="undoLast()" style="display:none;color:var(--orange);border-color:rgba(245,158,11,0.3)" title="Geri Al (Ctrl+Z)">↩️ Geri Al</button>
     <div id="syncStatus" style="font-size:11px;padding:4px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;min-width:160px;text-align:center">💾 Yerel</div>
     <div id="roleBadge" style="font-size:11px;padding:4px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;min-width:80px;text-align:center;cursor:pointer" onclick="handleRoleBadgeClick()">🔐 Giriş Yap</div>
     <button class="btn btn-ghost" id="raporBtn" onclick="showRaporModal()" style="font-size:12px">📥 Rapor Al</button>
@@ -1232,7 +1204,7 @@
     </div>
 
     <!-- Weekly Hours -->
-    <div class="sidebar-section">
+    <div class="sidebar-section" style="flex:1;overflow-y:auto">
       <div class="sidebar-title">Haftalık Çalışma Saatleri</div>
       <div id="hoursBox"></div>
     </div>
@@ -1260,7 +1232,7 @@
 </div>
 
 <!-- PUANTAJ VIEW -->
-<div id="puantajView" style="display:none;padding:24px 32px;flex:1;overflow-y:auto;min-height:0"></div>
+<div id="puantajView" style="display:none;padding:24px 32px"></div>
 <div id="eskiPersonelView" style="display:none;padding:24px 32px"></div>
 
 <!-- TAKVIM VIEW -->
@@ -1363,7 +1335,6 @@
 <div class="context-menu" id="contextMenu">
   <div class="ctx-item" onclick="ctxEdit()">✏️ Düzenle</div>
   <div class="ctx-item" onclick="ctxCopy()">📋 Kopyala</div>
-  <div class="ctx-item" id="ctxPasteBtn" onclick="ctxPaste()" style="display:none">📌 Yapıştır</div>
   <div class="ctx-sep"></div>
   <div class="ctx-item danger" onclick="ctxDelete()">🗑️ Sil</div>
 </div>
@@ -1877,31 +1848,6 @@ if (_firstKey !== undefined && !String(_firstKey).includes('W')) {
   });
 }
 let clipboard = null;
-let undoStack = []; // {employees, shifts} snapshot'ları
-const UNDO_MAX = 20;
-
-function saveUndoSnapshot() {
-  undoStack.push({
-    employees: JSON.parse(JSON.stringify(employees)),
-    shifts:    JSON.parse(JSON.stringify(shifts)),
-  });
-  if (undoStack.length > UNDO_MAX) undoStack.shift();
-  updateUndoBtn();
-}
-function undoLast() {
-  if (!undoStack.length) return;
-  const snap = undoStack.pop();
-  employees = snap.employees;
-  shifts    = snap.shifts;
-  saveData();
-  render();
-  updateUndoBtn();
-  showCloudToast('↩️ Geri alındı');
-}
-function updateUndoBtn() {
-  const btn = document.getElementById('undoBtn');
-  if (btn) { btn.style.display = undoStack.length ? '' : 'none'; }
-}
 let contextTarget = null;
 let editTarget = null;
 let selectedDisplayDate = null; // null = use today or first day of week
@@ -1923,14 +1869,12 @@ function getShift(empId, dateStr) {
   return ws[empId][dateStr] || null;
 }
 function setShift(empId, dateStr, data) {
-  saveUndoSnapshot();
   const ws = getWeekShifts();
   if (!ws[empId]) ws[empId] = {};
   ws[empId][dateStr] = data;
   saveData();
 }
 function deleteShift(empId, dateStr) {
-  saveUndoSnapshot();
   const ws = getWeekShifts();
   if (ws[empId]) delete ws[empId][dateStr];
   saveData();
@@ -2086,10 +2030,7 @@ function showCtx(e, empId, dateStr) {
   contextTarget = {empId, dateStr};
   const m = document.getElementById('contextMenu');
   m.style.left = e.clientX + 'px';
-  m.style.top  = e.clientY + 'px';
-  // Clipboard doluysa yapıştır göster
-  const pasteBtn = document.getElementById('ctxPasteBtn');
-  if (pasteBtn) pasteBtn.style.display = clipboard ? '' : 'none';
+  m.style.top = e.clientY + 'px';
   m.classList.add('open');
 }
 function ctxEdit() {
@@ -2099,15 +2040,6 @@ function ctxEdit() {
 function ctxCopy() {
   clipboard = {...getShift(contextTarget.empId, contextTarget.dateStr)};
   closeCtx();
-  showCloudToast('📋 Kopyalandı — yapıştırmak için başka bir hücreye sağ tıklayın');
-}
-function ctxPaste() {
-  if (!clipboard) return;
-  setShift(contextTarget.empId, contextTarget.dateStr, {...clipboard});
-  closeCtx();
-  render();
-  saveData();
-  showCloudToast('📌 Yapıştırıldı');
 }
 function ctxDelete() {
   deleteShift(contextTarget.empId, contextTarget.dateStr);
@@ -2116,10 +2048,7 @@ function ctxDelete() {
 }
 function closeCtx() { document.getElementById('contextMenu').classList.remove('open'); }
 document.addEventListener('click', closeCtx);
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') { closeModal(); closeCtx(); }
-  if ((e.ctrlKey||e.metaKey) && e.key === 'z' && !e.shiftKey) { e.preventDefault(); undoLast(); }
-});
+document.addEventListener('keydown', e => { if(e.key==='Escape'){ closeModal(); closeCtx(); } });
 
 // ============================================================
 // MODAL
@@ -3656,40 +3585,6 @@ async function exportExcel(tip) {
     const ws = XLSX.utils.aoa_to_sheet(rows);
     XLSX.utils.book_append_sheet(wb, ws, 'Personel Özlük');
 
-  } else if (tip === 'puantaj_tek') {
-    // Sadece seçili personel + seçili ay
-    const empId2 = puantajEmpId;
-    const emp2 = employees.find(e => e.id === empId2);
-    if (!emp2) { showCloudToast('⚠️ Önce bir personel seçin'); return; }
-    const hr2 = getEmpHR(empId2);
-    const ay2 = MONTHS_TR[puantajMonth] + ' ' + puantajYear;
-    const daysInMonth2 = new Date(puantajYear, puantajMonth+1, 0).getDate();
-    const puan2 = loadPuantaj(empId2, puantajYear, puantajMonth);
-    const dayData2 = puan2.days || {};
-    const rows2 = [];
-    rows2.push([emp2.name + ' — ' + ay2]);
-    rows2.push(['Lokasyon', emp2.loc, 'Pozisyon', hr2.pozisyon||'']);
-    rows2.push(['Resmi Net', hr2.maas||0, 'Elden Net', hr2.eldenmaas||0]);
-    rows2.push([]);
-    const hdr2 = ['Gün', 'Tarih', 'Statü', 'Kesinti'];
-    rows2.push(hdr2);
-    let calisma2=0, kesinti2=0;
-    for (let d=1; d<=daysInMonth2; d++) {
-      const date2 = new Date(puantajYear, puantajMonth, d);
-      const isWE2 = date2.getDay()===0||date2.getDay()===6;
-      const dayName2 = ['Paz','Pzt','Sal','Çar','Per','Cum','Cmt'][date2.getDay()];
-      const status2 = dayData2[d]?.status || (isWE2?'bosta':'calisma');
-      const st2 = DAY_STATUS[status2];
-      if(status2==='calisma') calisma2++;
-      if(st2?.kesinti) kesinti2+=st2.kesinti;
-      rows2.push([dayName2, d+'.'+String(puantajMonth+1).padStart(2,'0')+'.'+puantajYear, st2?.label||status2, st2?.kesinti||0]);
-    }
-    rows2.push([]);
-    rows2.push(['Toplam Çalışma', calisma2, 'Toplam Kesinti', kesinti2]);
-    const net2 = parseFloat(puan2.s_resmiNet||hr2.maas||0) + parseFloat(puan2.s_eldenNet||hr2.eldenmaas||0);
-    rows2.push(['Ödenecek Net', Math.round(net2 - (kesinti2*net2/30))]);
-    const ws2 = XLSX.utils.aoa_to_sheet(rows2);
-    XLSX.utils.book_append_sheet(wb, ws2, emp2.name.substring(0,25) + ' Puantaj');
   } else if (tip === 'puantaj') {
     const ay = MONTHS_TR[puantajMonth] + ' ' + puantajYear;
     const daysInMonth = new Date(puantajYear, puantajMonth+1, 0).getDate();
@@ -4210,7 +4105,7 @@ function renderPuantajDetail() {
     <div class="puantaj-body" id="puantajBody"></div>
     <div class="puantaj-footer">
       <button class="btn btn-ghost" style="flex:1" onclick="importFromVardiya()">📅 Vardiyadan Aktar</button>
-      <button class="btn btn-ghost" style="flex:1" onclick="exportExcel('puantaj_tek')">📥 Excel</button>
+      <button class="btn btn-ghost" style="flex:1" onclick="exportExcel('puantaj')">📥 Excel</button>
       <button class="btn btn-primary" style="flex:2" onclick="savePuantajData()">💾 Kaydet & Hesapla</button>
     </div>`;
 
@@ -4785,14 +4680,6 @@ function buildStoreHoursForm(loc, safeId, h) {
             <input class="sh-input" type="time" id="sh_hfk_${safeId}" value="${h.hfKapanis||'22:00'}"></div>
         </div>
       </div>
-      <div class="sh-sep">🚫 Kapalı Günler</div>
-      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px">
-        ${['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'].map((g2,i)=>{
-          const ids=['pzt','sal','car','per','cum','cmt','paz'];
-          const checked=(h.kapaliGunler||[]).includes(ids[i])?'checked':'';
-          return '<label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer"><input type="checkbox" id="sh_kpg_'+ids[i]+'_${safeId}" '+checked+'>'+g2+'</label>';
-        }).join('')}
-      </div>
       <div class="sh-sep">👤 Sorumluluk Kuralları</div>
       <label class="sh-check">
         <input type="checkbox" id="sh_sab_${safeId}" ${h.sabahSorumlu!==false?'checked':''}>
@@ -4839,8 +4726,6 @@ function shToggleHf(safeId, val) {
 function saveSidebarHours(loc, safeId) {
   const g  = id => { const el=document.getElementById('sh_'+id+'_'+safeId); return el?el.value:''; };
   const gb = id => { const el=document.getElementById('sh_'+id+'_'+safeId); return el?el.checked:false; };
-  const gunIds = ['pzt','sal','car','per','cum','cmt','paz'];
-  const kapaliGunler = gunIds.filter(g2 => { const el=document.getElementById('sh_kpg_'+g2+'_'+safeId); return el&&el.checked; });
   saveStoreHoursData(loc, {
     acilis:       g('ac'),
     kapanis:      g('ka'),
@@ -4852,7 +4737,6 @@ function saveSidebarHours(loc, safeId) {
     aksamSorumlu: gb('aks'),
     ciftSorumlu:  gb('cft'),
     merkez:       gb('merkez'),
-    kapaliGunler: kapaliGunler,
   });
   updateSidebar();
 }
@@ -4869,19 +4753,12 @@ function getStoreHoursAlerts() {
 
     _alertWeek.dates.forEach((dateStr, i) => {
       const dow = (() => { try { const d=new Date(2026,parseInt(dateStr.split('.')[1])-1,parseInt(dateStr.split('.')[0])); return d.getDay(); } catch(e){ return 1; }})();
-      // Kapalı gün kontrolü
-      const gunIds2 = ['paz','pzt','sal','car','per','cum','cmt']; // JS getDay: 0=Paz
-      const gunId2 = gunIds2[dow] || 'pzt';
-      if ((h.kapaliGunler||[]).includes(gunId2)) return; // kapalı gün — uyarma
       const isWe = dow===0||dow===6;
       const openT  = (isWe&&h.hfFarkli)?h.hfAcilis :h.acilis;
       const closeT = (isWe&&h.hfFarkli)?h.hfKapanis:h.kapanis;
       const dayName = _alertWeek.dayNames ? _alertWeek.dayNames[i] : dateStr;
       const hasAnyShift = locEmps.some(emp => getShift(emp.id, dateStr));
       if (!hasAnyShift) return; // planlanmamış gün, uyarma
-      // Tüm çalışanlar izinliyse (haftalık izin vb.) sorumlu uyarısı verme
-      const allOnLeave = locEmps.every(emp => { const s=getShift(emp.id,dateStr); return !s||(s.type==='leave'); });
-      if (allOnLeave) return;
 
       // Misafir çalışanlar: başka lokasyondan special ile buraya gönderilen
       const guests = employees.filter(e => {
