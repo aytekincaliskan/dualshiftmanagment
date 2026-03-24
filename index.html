@@ -57,7 +57,7 @@
     align-items: center;
     justify-content: space-between;
     border-bottom: 1px solid var(--border);
-    background: rgba(10,14,26,0.9);
+    background: rgba(10,14,26,0.95);
     backdrop-filter: blur(12px);
     position: sticky; top: 0; z-index: 100;
   }
@@ -142,15 +142,25 @@
   .stat-lbl { font-size: 11px; color: var(--text2); margin-top: 2px; }
 
   /* MAIN LAYOUT */
-  .main { display: grid; grid-template-columns: 1fr 280px; gap: 0; min-height: calc(100vh - 140px); }
+  .main {
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    gap: 0;
+    height: calc(100vh - 81px);
+    overflow: hidden;
+    position: sticky;
+    top: 81px;
+  }
 
   /* SCHEDULE TABLE */
-  .schedule-area { padding: 20px 32px 32px; overflow-x: auto; }
-
-  .section-header {
-    display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 16px;
+  .schedule-area {
+    padding: 0 32px 32px;
+    overflow: auto;
+    height: 100%;
+    box-sizing: border-box;
   }
+
+  .section-header { display: none; }
   .section-title { font-size: 14px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: 1px; }
 
   .schedule-table {
@@ -161,15 +171,20 @@
   }
 
   .schedule-table th {
-    padding: 10px 8px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    padding: 14px 8px 10px;
     font-size: 11px; font-weight: 700;
     text-transform: uppercase; letter-spacing: 0.5px;
     color: var(--text2);
-    background: var(--surface);
+    background: #0a0e1a; /* tam opak, bg ile aynı */
     border-bottom: 2px solid var(--border);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.8);
     text-align: center;
   }
-  .schedule-table th:first-child { text-align: left; padding-left: 16px; border-radius: 12px 0 0 0; min-width: 160px; }
+  .schedule-table th:first-child { text-align: left; padding-left: 16px; min-width: 160px; position: sticky; left: 0; z-index: 20; background: #0a0e1a; }
+  .schedule-table td:first-child { position: sticky; left: 0; z-index: 5; background: #0a0e1a; }
   .schedule-table th:last-child { border-radius: 0 12px 0 0; }
 
   .day-header { font-size: 13px; font-weight: 700; color: var(--text); display: block; }
@@ -289,11 +304,15 @@
     border-left: 1px solid var(--border);
     background: var(--surface);
     display: flex; flex-direction: column;
+    height: 100%;
+    overflow-y: auto; /* sidebar kendi içinde kayar */
+    overflow-x: hidden;
   }
 
   .sidebar-section {
     padding: 16px;
     border-bottom: 1px solid var(--border);
+    flex-shrink: 0; /* sıkışmayı önle */
   }
   .sidebar-title {
     font-size: 11px; font-weight: 700;
@@ -559,7 +578,7 @@
   /* ── PERSONEL PANEL ── */
   #personnelView { display: none; padding: 24px 32px; }
   
-  #scheduleView { display: block; }
+  #scheduleView { display: block; height: 100%; }
   
 
   .personnel-grid {
@@ -1204,7 +1223,7 @@
     </div>
 
     <!-- Weekly Hours -->
-    <div class="sidebar-section" style="flex:1;overflow-y:auto">
+    <div class="sidebar-section">
       <div class="sidebar-title">Haftalık Çalışma Saatleri</div>
       <div id="hoursBox"></div>
     </div>
@@ -1246,10 +1265,17 @@
     <div class="form-group">
       <label class="form-label">Vardiya Tipi</label>
       <select class="form-select" id="shiftType" onchange="onTypeChange()">
-        <option value="normal">Normal Vardiya</option>
-        <option value="leave">Haftalık İzin</option>
-        <option value="special">Özel (Lokasyon Değişimi)</option>
+        <option value="normal">💼 Normal Vardiya</option>
+        <option value="leave">📅 İzin</option>
+        <option value="special">📍 Özel (Lokasyon Değişimi)</option>
       </select>
+    </div>
+    <div id="leaveSubField" style="display:none">
+      <div class="form-group">
+        <label class="form-label">İzin Tipi</label>
+        <select class="form-select" id="leaveSubType">
+        </select>
+      </div>
     </div>
     <div id="timeFields">
       <div class="time-row">
@@ -1902,7 +1928,8 @@ function render() {
   head.innerHTML = '';
   let tr = document.createElement('tr');
   let th = document.createElement('th');
-  th.textContent = 'ÇALIŞAN';
+  th.style.cssText = 'font-size:10px;color:var(--text3);letter-spacing:0.5px;padding-left:16px;';
+  th.innerHTML = 'ÇALIŞAN';
   tr.appendChild(th);
   week.dates.forEach((d, i) => {
     const isToday = d === todayStr;
@@ -1957,7 +1984,15 @@ function render() {
         if (!shift) {
           td.innerHTML = `<div class="shift-block empty" onclick="openModal(${emp.id},'${dateStr}')"><div class="shift-add">+</div></div>`;
         } else if (shift.type === 'leave') {
-          td.innerHTML = `<div class="shift-block leave" oncontextmenu="showCtx(event,${emp.id},'${dateStr}')"><div class="shift-leave-text">HAFTALİK İZİN</div><div class="tooltip">Haftalık İzin</div></div>`;
+          const _lt = shift.leaveType || 'hafizin';
+          const _lv = DAY_STATUS[_lt] || DAY_STATUS['hafizin'];
+          const _lc = _lv.paid === false ? 'rgba(239,68,68,0.18)' : 'rgba(99,102,241,0.15)';
+          const _lb = _lv.paid === false ? 'rgba(239,68,68,0.4)' : 'rgba(99,102,241,0.3)';
+          const _ltc = _lv.paid === false ? '#f87171' : '#a5b4fc';
+          td.innerHTML = `<div class="shift-block leave" onclick="openModal(${emp.id},'${dateStr}')" oncontextmenu="showCtx(event,${emp.id},'${dateStr}')" draggable="true" ondragstart="dragStart(event,${emp.id},'${dateStr}')" style="background:${_lc};border-color:${_lb}">
+            <div class="shift-leave-text" style="color:${_ltc}">${_lv.icon} ${_lv.label.toUpperCase()}</div>
+            <div class="tooltip">${_lv.icon} ${_lv.label}</div>
+          </div>`;
         } else if (shift.type === 'special') {
           const hrs = calcHours(shift.in, shift.out);
           td.innerHTML = `<div class="shift-block normal" draggable="true" oncontextmenu="showCtx(event,${emp.id},'${dateStr}')" ondragstart="dragStart(event,${emp.id},'${dateStr}')">
@@ -2068,6 +2103,14 @@ function openModal(empId, dateStr) {
     document.getElementById('inTime').value = existing.in || '11:00';
     document.getElementById('outTime').value = existing.out || '21:00';
     document.getElementById('specialLoc').value = existing.loc || '';
+    // İzin alt tipi
+    if (existing.type === 'leave' && existing.leaveType) {
+      // onTypeChange dolduracak, sonra seçeceğiz
+      setTimeout(() => {
+        const sel = document.getElementById('leaveSubType');
+        if (sel) sel.value = existing.leaveType;
+      }, 10);
+    }
   } else {
     document.getElementById('shiftType').value = 'normal';
     document.getElementById('inTime').value = '11:00';
@@ -2111,6 +2154,23 @@ function onTypeChange() {
   if (sf && t !== 'normal') sf.style.display = 'none';
   const spf = document.getElementById('supportField');
   if (spf) spf.style.display = t === 'normal' ? '' : 'none';
+  // İzin alt tipi
+  const lsf = document.getElementById('leaveSubField');
+  if (lsf) lsf.style.display = t === 'leave' ? '' : 'none';
+  if (t === 'leave') {
+    const sel = document.getElementById('leaveSubType');
+    const current = sel.value;
+    sel.innerHTML = Object.entries(DAY_STATUS)
+      .filter(([k]) => k !== 'calisma' && k !== 'bosta')
+      .map(([k, v]) => `<option value="${k}" ${current===k?'selected':''}>${v.icon} ${v.label}</option>`)
+      .join('');
+    // Özel izinleri de ekle
+    loadOzelIzinler().forEach(o => {
+      if (!sel.querySelector(`option[value="${o.key}"]`))
+        sel.innerHTML += `<option value="${o.key}" ${current===o.key?'selected':''}>${o.icon||'📌'} ${o.label}</option>`;
+    });
+    if (!sel.value) sel.value = 'hafizin';
+  }
   if (t === 'special') {
     const sel = document.getElementById('specialLoc');
     const currentEmp = editTarget ? employees.find(e => e.id === editTarget.empId) : null;
@@ -2139,7 +2199,8 @@ function saveShift() {
   const t = document.getElementById('shiftType').value;
   let data;
   if (t === 'leave') {
-    data = {type:'leave'};
+    const lt = document.getElementById('leaveSubType')?.value || 'hafizin';
+    data = {type:'leave', leaveType: lt};
   } else if (t === 'special') {
     data = {type:'special', loc: document.getElementById('specialLoc').value, in: document.getElementById('inTime').value, out: document.getElementById('outTime').value};
   } else {
@@ -4135,8 +4196,11 @@ function renderPuantajBody() {
   let toplamKesinti = 0; // kesinti katsayısı (1 = tam gün, 0.5 = yarım gün)
   let izinSayilari = { yillikizin:0, idariizin:0, saglikraporu:0, resmitatil:0, ucrsizizin:0, yarimgun:0, devamsizlik:0 };
 
-  const normalHour       = parseFloat(hr.gunlukSaat || 8);
-  const haftalikStandart = parseFloat(puan.s_haftalikSaat ?? hr.haftalikSaat ?? 45);
+  // Genel standartları ayarlardan oku, puantajda override varsa onu kullan
+  const _globalStandart = loadCalismaStandart();
+  const normalHour       = parseFloat(puan.s_gunlukSaat ?? hr.gunlukSaat ?? _globalStandart.gunlukSaat ?? 9);
+  const haftalikStandart = parseFloat(puan.s_haftalikSaat ?? hr.haftalikSaat ?? _globalStandart.haftalikSaat ?? 45);
+  const mesaiKatsayi     = parseFloat(_globalStandart.mesaiKatsayi ?? 1.5);
   const aylikStandartSaat = haftalikStandart * (52 / 12); // aylık standart saat
 
   days.forEach(({d, isWeekend}) => {
@@ -4173,7 +4237,10 @@ function renderPuantajBody() {
 
   // Mesai = aylık standart saatin üzerindeki çalışma
   const efektifMesaiHour = Math.max(0, calismaHour - aylikStandartSaat);
-  const mesaiUcret = efektifMesaiHour * mesaiSaatlik * 1.5;
+  // Onay verilmişse ekle, verilmemişse 0
+  const mesaiUcret = (puan._mesaiEkle !== false && efektifMesaiHour > 0)
+    ? efektifMesaiHour * mesaiSaatlik * mesaiKatsayi
+    : 0;
 
   // Primler
   const primler = puan.primler || [];
@@ -4519,6 +4586,41 @@ function deleteAvans(idx) {
 function savePuantajData() {
   // Draft varsa onu kullan, yoksa mevcut veriyi yükle
   const puan = puantajDraft || loadPuantaj(puantajEmpId, puantajYear, puantajMonth);
+
+  // Mesai onay sorusu
+  const _std = loadCalismaStandart();
+  if (_std.mesaiSorulsun !== false) {
+    const hr2   = getEmpHR(puantajEmpId);
+    const _hstd = parseFloat(puan.s_haftalikSaat ?? hr2.haftalikSaat ?? _std.haftalikSaat ?? 45);
+    const _aystd = _hstd * (52/12);
+    // Toplam çalışma saatini hesapla
+    let _toplamH = 0;
+    const _normalH = parseFloat(puan.s_gunlukSaat ?? hr2.gunlukSaat ?? _std.gunlukSaat ?? 9);
+    Object.values(puan.days || {}).forEach(d => {
+      if (d.status === 'calisma') {
+        _toplamH += (d.in && d.out) ? calcHours(d.in, d.out) : _normalH;
+      }
+    });
+    const _mesaiH = Math.max(0, _toplamH - _aystd);
+    if (_mesaiH > 0 && !puan._mesaiOnaylandi) {
+      const onay = confirm(
+        `⏰ Mesai Tespiti
+
+` +
+        `Bu ay toplam ${_toplamH.toFixed(1)} saat çalışma var.
+` +
+        `Aylık standart: ${_aystd.toFixed(1)} saat
+` +
+        `Fazla çalışma: ${_mesaiH.toFixed(1)} saat
+
+` +
+        `Mesai ücreti (×${_std.mesaiKatsayi}) hesaba eklensin mi?`
+      );
+      puan._mesaiOnaylandi = onay;
+      puan._mesaiEkle = onay;
+    }
+  }
+
   puantajDraft = null; // draft'ı temizle
   // Maaş ayarlarını input'lardan oku ve kaydet
   const hr = getEmpHR(puantajEmpId);
@@ -5102,7 +5204,8 @@ async function deleteUser(uname) {
 function switchStab(n) {
   if (n === 4) renderIzinTipleriPanel();
   if (n === 5) refreshLocalInfo();
-  [1,2,3,4,5].forEach(i => {
+  if (n === 6) renderCalismaStandartlari();
+  [1,2,3,4,5,6].forEach(i => {
     const body = document.getElementById('stabBody'+i);
     const tab  = document.getElementById('stab'+i);
     if (body) body.style.display = i===n?'':'none';
@@ -5283,6 +5386,122 @@ function getStoreHoursForDay(loc, dateStr) {
   };
 }
 
+
+// ============================================================
+// ÇALIŞMA STANDARTLARI
+// ============================================================
+const STANDART_KEY = 'vp_calisma_standart';
+
+function loadCalismaStandart() {
+  try { return JSON.parse(localStorage.getItem(STANDART_KEY) || 'null') || {
+    haftalikSaat: 45,
+    mesaiKatsayi: 1.5,
+    mesaiSorulsun: true,
+    gunlukSaat: 9,
+  }; } catch(e) { return { haftalikSaat:45, mesaiKatsayi:1.5, mesaiSorulsun:true, gunlukSaat:9 }; }
+}
+
+function saveCalismaStandart(data) {
+  localStorage.setItem(STANDART_KEY, JSON.stringify(data));
+  showSaveToast();
+}
+
+function renderCalismaStandartlari() {
+  const s = loadCalismaStandart();
+  const panel = document.getElementById('calismaStandartlariPanel');
+  panel.innerHTML = `
+    <div style="font-size:12px;color:var(--text2);margin-bottom:16px">
+      Tüm çalışanlar için geçerli varsayılan standartlar. Puantaj hesaplanırken bu değerler baz alınır.
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+      <div class="sh-field">
+        <label class="sh-label">📅 Haftalık Standart Saat</label>
+        <div style="display:flex;align-items:center;gap:8px">
+          <input class="sh-input" type="number" id="std_haftalikSaat"
+            value="${s.haftalikSaat}" min="20" max="60" style="width:80px">
+          <span style="font-size:12px;color:var(--text3)">saat / hafta</span>
+        </div>
+        <div style="font-size:10px;color:var(--text3);margin-top:4px">Bu saatin üzeri mesai sayılır</div>
+      </div>
+
+      <div class="sh-field">
+        <label class="sh-label">⏰ Günlük Standart Saat</label>
+        <div style="display:flex;align-items:center;gap:8px">
+          <input class="sh-input" type="number" id="std_gunlukSaat"
+            value="${s.gunlukSaat}" min="4" max="12" style="width:80px">
+          <span style="font-size:12px;color:var(--text3)">saat / gün</span>
+        </div>
+        <div style="font-size:10px;color:var(--text3);margin-top:4px">Saat girilmemiş günlerde varsayılan</div>
+      </div>
+
+      <div class="sh-field">
+        <label class="sh-label">💰 Mesai Katsayısı</label>
+        <div style="display:flex;align-items:center;gap:8px">
+          <input class="sh-input" type="number" id="std_mesaiKatsayi"
+            value="${s.mesaiKatsayi}" min="1" max="3" step="0.25" style="width:80px">
+          <span style="font-size:12px;color:var(--text3)">× normal ücret</span>
+        </div>
+        <div style="font-size:10px;color:var(--text3);margin-top:4px">Genellikle 1.5× (yasal minimum)</div>
+      </div>
+    </div>
+
+    <div style="border-top:1px solid var(--border);padding-top:14px;margin-bottom:16px">
+      <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Puantaj Davranışı</div>
+      <label class="sh-check">
+        <input type="checkbox" id="std_mesaiSorulsun" ${s.mesaiSorulsun !== false ? 'checked' : ''}
+          style="accent-color:var(--accent);width:15px;height:15px">
+        <div>
+          <div style="font-size:13px;font-weight:600;color:var(--text)">💬 Mesai tespitinde onay sor</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:1px">
+            Hesaplarken standart saati aşan çalışma varsa "Mesai eklensin mi?" diye sorar
+          </div>
+        </div>
+      </label>
+    </div>
+
+    <!-- Hesaplamalı önizleme -->
+    <div style="background:rgba(79,142,247,0.08);border:1px solid rgba(79,142,247,0.2);border-radius:10px;padding:14px;margin-bottom:16px">
+      <div style="font-size:11px;font-weight:700;color:var(--accent);margin-bottom:8px">📊 Hesaplama Önizlemesi</div>
+      <div style="font-size:12px;color:var(--text2);line-height:2">
+        Haftalık standart: <b id="prev_hafta">45</b> saat →
+        Aylık standart: <b id="prev_aylik">~195</b> saat<br>
+        Fazla çalışma × <b id="prev_katsayi">1.5</b> = mesai ücreti
+      </div>
+    </div>
+
+    <button class="btn btn-primary" style="width:100%;padding:10px" onclick="saveCalismaStandartlari()">
+      💾 Standartları Kaydet
+    </button>
+  `;
+
+  // Önizleme güncelleme
+  ['std_haftalikSaat','std_mesaiKatsayi'].forEach(id => {
+    document.getElementById(id)?.addEventListener('input', updateStandartPreview);
+  });
+  updateStandartPreview();
+}
+
+function updateStandartPreview() {
+  const h  = parseFloat(document.getElementById('std_haftalikSaat')?.value || 45);
+  const k  = parseFloat(document.getElementById('std_mesaiKatsayi')?.value || 1.5);
+  const ay = Math.round(h * 52 / 12);
+  const pv = document.getElementById('prev_hafta');   if (pv) pv.textContent = h;
+  const pa = document.getElementById('prev_aylik');   if (pa) pa.textContent = '~' + ay;
+  const pk = document.getElementById('prev_katsayi'); if (pk) pk.textContent = k;
+}
+
+function saveCalismaStandartlari() {
+  const g  = id => document.getElementById(id);
+  const gb = id => document.getElementById(id)?.checked;
+  saveCalismaStandart({
+    haftalikSaat:  parseFloat(g('std_haftalikSaat')?.value  || 45),
+    gunlukSaat:    parseFloat(g('std_gunlukSaat')?.value    || 9),
+    mesaiKatsayi:  parseFloat(g('std_mesaiKatsayi')?.value  || 1.5),
+    mesaiSorulsun: gb('std_mesaiSorulsun') !== false,
+  });
+}
+
 // ── SAVE INDICATOR ────────────────────────────────────────────────────────────
 // Show a brief "Kaydedildi" toast on save
 function showSaveToast() {
@@ -5455,6 +5674,7 @@ initApp();
       <button class="drawer-tab" id="stab2" onclick="switchStab(2)" style="font-size:12px">🕐 Mağaza Saatleri</button>
       <button class="drawer-tab" id="stab3" onclick="switchStab(3)" style="font-size:12px">👥 Kullanıcılar</button>
       <button class="drawer-tab" id="stab4" onclick="switchStab(4)" style="font-size:12px">📅 İzin Tipleri</button>
+      <button class="drawer-tab" id="stab6" onclick="switchStab(6)" style="font-size:12px">⏱️ Çalışma Standartları</button>
       <button class="drawer-tab" id="stab5" onclick="switchStab(5)" style="font-size:12px">🛟 Veri Kurtarma</button>
     </div>
     <!-- Tab 1: Lokasyonlar -->
@@ -5493,6 +5713,10 @@ initApp();
     <!-- Tab 4: İzin Tipleri -->
     <div id="stabBody4" style="display:none;flex:1;overflow-y:auto">
       <div id="izinTipleriPanel"></div>
+    </div>
+    <!-- Tab 6: Çalışma Standartları -->
+    <div id="stabBody6" style="display:none;flex:1;overflow-y:auto">
+      <div id="calismaStandartlariPanel"></div>
     </div>
     <!-- Tab 5: Veri Kurtarma -->
     <div id="stabBody5" style="display:none;flex:1;overflow-y:auto">
