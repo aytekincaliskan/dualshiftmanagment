@@ -52,12 +52,16 @@
 
   /* HEADER */
   header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--bg);
     padding: 20px 32px;
     display: flex;
     align-items: center;
     justify-content: space-between;
     border-bottom: 1px solid var(--border);
-    background: rgba(10,14,26,0.95);
+    background: rgba(10,14,26,0.9);
     backdrop-filter: blur(12px);
     position: sticky; top: 0; z-index: 100;
   }
@@ -122,6 +126,10 @@
 
   /* STATS BAR */
   .stats-bar {
+    position: sticky;
+    top: 114px;
+    z-index: 98;
+    background: var(--bg);
     display: grid; grid-template-columns: repeat(5, 1fr);
     gap: 12px; padding: 16px 32px;
     border-bottom: 1px solid var(--border);
@@ -142,25 +150,15 @@
   .stat-lbl { font-size: 11px; color: var(--text2); margin-top: 2px; }
 
   /* MAIN LAYOUT */
-  .main {
-    display: grid;
-    grid-template-columns: 1fr 280px;
-    gap: 0;
-    height: calc(100vh - 81px);
-    overflow: hidden;
-    position: sticky;
-    top: 81px;
-  }
+  .main { display: grid; grid-template-columns: 1fr 280px; gap: 0; min-height: calc(100vh - 140px); }
 
   /* SCHEDULE TABLE */
-  .schedule-area {
-    padding: 0 32px 32px;
-    overflow: auto;
-    height: 100%;
-    box-sizing: border-box;
-  }
+  .schedule-area { padding: 20px 32px 32px; overflow-x: auto; }
 
-  .section-header { display: none; }
+  .section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px;
+  }
   .section-title { font-size: 14px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: 1px; }
 
   .schedule-table {
@@ -171,21 +169,19 @@
   }
 
   .schedule-table th {
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    padding: 14px 8px 10px;
+    padding: 13px 8px;
     font-size: 11px; font-weight: 700;
     text-transform: uppercase; letter-spacing: 0.5px;
     color: var(--text2);
-    background: #0a0e1a; /* tam opak, bg ile aynı */
+    background: #0f1520;
     border-bottom: 2px solid var(--border);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.8);
     text-align: center;
+    position: sticky;
+    top: 0;
+    z-index: 5;
   }
-  .schedule-table th:first-child { text-align: left; padding-left: 16px; min-width: 160px; position: sticky; left: 0; z-index: 20; background: #0a0e1a; }
-  .schedule-table td:first-child { position: sticky; left: 0; z-index: 5; background: #0a0e1a; }
-  .schedule-table th:last-child { border-radius: 0 12px 0 0; }
+  .schedule-table th:first-child { text-align: left; padding-left: 16px; border-radius: 0; min-width: 160px; }
+  .schedule-table th:last-child { border-radius: 0; }
 
   .day-header { font-size: 13px; font-weight: 700; color: var(--text); display: block; }
   .date-header { font-size: 10px; color: var(--text3); display: block; }
@@ -304,15 +300,11 @@
     border-left: 1px solid var(--border);
     background: var(--surface);
     display: flex; flex-direction: column;
-    height: 100%;
-    overflow-y: auto; /* sidebar kendi içinde kayar */
-    overflow-x: hidden;
   }
 
   .sidebar-section {
     padding: 16px;
     border-bottom: 1px solid var(--border);
-    flex-shrink: 0; /* sıkışmayı önle */
   }
   .sidebar-title {
     font-size: 11px; font-weight: 700;
@@ -561,6 +553,10 @@
 
   /* ── TABS ── */
   .tab-bar {
+    position: sticky;
+    top: 69px;
+    z-index: 99;
+    background: var(--bg);
     display: flex; align-items: center; gap: 4px;
     padding: 0 32px;
     border-bottom: 1px solid var(--border);
@@ -578,7 +574,7 @@
   /* ── PERSONEL PANEL ── */
   #personnelView { display: none; padding: 24px 32px; }
   
-  #scheduleView { display: block; height: 100%; }
+  #scheduleView { display: block; }
   
 
   .personnel-grid {
@@ -1131,7 +1127,7 @@
     <button class="btn btn-ghost" style="color:var(--red);border-color:rgba(239,68,68,0.3)" onclick="clearWeekConfirm()">🗑️ Haftayı Temizle</button>
     <div id="syncStatus" style="font-size:11px;padding:4px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;min-width:160px;text-align:center">💾 Yerel</div>
     <div id="roleBadge" style="font-size:11px;padding:4px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;min-width:80px;text-align:center;cursor:pointer" onclick="handleRoleBadgeClick()">🔐 Giriş Yap</div>
-    <button class="btn btn-ghost" id="raporBtn" onclick="showRaporModal()" style="font-size:12px">📥 Rapor Al</button>
+    <button class="btn btn-ghost" id="raporBtn" onclick="showRaporModal()" style="font-size:12px;display:none">📥 Rapor Al</button>
     <button class="btn btn-ghost" id="ayarlarBtn" onclick="openSettings()" style="display:none">⚙️ Ayarlar</button>
     <button class="btn btn-primary" id="calisanEkleBtn" onclick="addEmployee()" style="display:none">+ Çalışan Ekle</button>
   </div>
@@ -1144,6 +1140,7 @@
   <button class="tab-btn" id="tabPuantaj" onclick="switchTab('puantaj')">💰 Puantaj & Maaş</button>
   <button class="tab-btn" id="tabEskiPersonel" onclick="switchTab('eskipersonel')">🗂️ Eski Personel</button>
   <button class="tab-btn" id="tabTakvim" onclick="switchTab('takvim')">📆 Takvim</button>
+  <button class="tab-btn" id="tabJournal" onclick="switchTab('journal')" style="display:none">📋 Journal</button>
 </div>
 
 <!-- STATS BAR -->
@@ -1240,7 +1237,7 @@
       <div class="personnel-list-header"><span>Çalışanlar</span><span id="empCountBadge"></span></div>
       <div style="display:flex;gap:8px;align-items:center">
         <input class="personnel-search" id="personnelSearch" placeholder="🔍 İsim veya lokasyon ara..." oninput="renderPersonnelList()" style="flex:1">
-        <button class="btn btn-ghost" style="font-size:11px;white-space:nowrap" onclick="exportExcel('personel')">📥 Excel</button>
+        ${isAdmin() ? '<button class="btn btn-ghost" style="font-size:11px;white-space:nowrap" onclick="exportExcel(\'personel\')">📥 Excel</button>' : ''}
       </div>
       <div class="personnel-list-body" id="personnelListBody"></div>
     </div>
@@ -1265,17 +1262,10 @@
     <div class="form-group">
       <label class="form-label">Vardiya Tipi</label>
       <select class="form-select" id="shiftType" onchange="onTypeChange()">
-        <option value="normal">💼 Normal Vardiya</option>
-        <option value="leave">📅 İzin</option>
-        <option value="special">📍 Özel (Lokasyon Değişimi)</option>
+        <option value="normal">Normal Vardiya</option>
+        <option value="leave">Haftalık İzin</option>
+        <option value="special">Özel (Lokasyon Değişimi)</option>
       </select>
-    </div>
-    <div id="leaveSubField" style="display:none">
-      <div class="form-group">
-        <label class="form-label">İzin Tipi</label>
-        <select class="form-select" id="leaveSubType">
-        </select>
-      </div>
     </div>
     <div id="timeFields">
       <div class="time-row">
@@ -1384,6 +1374,8 @@
     </div>
   </div>
 </div>
+
+<div id="journalView" style="display:none;padding:24px 32px"></div>
 
 <script>
 // ============================================================
@@ -1540,8 +1532,10 @@ function saveSession(u) {
   currentUsername = u.username;
   currentDisplay  = u.display_name || u.username;
   localStorage.setItem('vp_session', JSON.stringify({ username: u.username, role: u.role, display_name: u.display_name }));
+  setTimeout(() => journalLog('login', u.role + ' olarak giriş yapıldı'), 100);
 }
 function clearSession() {
+  journalLog('logout', 'Oturum kapatıldı');
   userRole = 'viewer'; currentUsername = ''; currentDisplay = '';
   localStorage.removeItem('vp_session');
 }
@@ -1760,6 +1754,8 @@ function updateTabVisibility() {
   if (tabPuantaj)      tabPuantaj.style.display      = isAdmin()  ? '' : 'none';
   if (tabTakvim)       tabTakvim.style.display       = isEditor() ? '' : 'none';
   if (tabEskiPersonel) tabEskiPersonel.style.display = isAdmin()  ? '' : 'none';
+  const tabJournal2 = document.getElementById('tabJournal');
+  if (tabJournal2) tabJournal2.style.display = isAdmin() ? '' : 'none';
 
   if (!isAdmin() && typeof switchTab === 'function') {
     const cur = document.querySelector('.tab-btn.active')?.id;
@@ -1775,6 +1771,8 @@ function updateTabVisibility() {
   if (ekleBtn)  ekleBtn.style.display  = isAdmin() ? '' : 'none';
   if (autoBtn)  autoBtn.style.display  = isAdmin() ? '' : 'none';
   if (clearBtn) clearBtn.style.display = isAdmin() ? '' : 'none';
+  const raporBtn2 = document.getElementById('raporBtn');
+  if (raporBtn2) raporBtn2.style.display = isAdmin() ? '' : 'none';
 }
 
 
@@ -1928,8 +1926,7 @@ function render() {
   head.innerHTML = '';
   let tr = document.createElement('tr');
   let th = document.createElement('th');
-  th.style.cssText = 'font-size:10px;color:var(--text3);letter-spacing:0.5px;padding-left:16px;';
-  th.innerHTML = 'ÇALIŞAN';
+  th.textContent = 'ÇALIŞAN';
   tr.appendChild(th);
   week.dates.forEach((d, i) => {
     const isToday = d === todayStr;
@@ -1984,15 +1981,7 @@ function render() {
         if (!shift) {
           td.innerHTML = `<div class="shift-block empty" onclick="openModal(${emp.id},'${dateStr}')"><div class="shift-add">+</div></div>`;
         } else if (shift.type === 'leave') {
-          const _lt = shift.leaveType || 'hafizin';
-          const _lv = DAY_STATUS[_lt] || DAY_STATUS['hafizin'];
-          const _lc = _lv.paid === false ? 'rgba(239,68,68,0.18)' : 'rgba(99,102,241,0.15)';
-          const _lb = _lv.paid === false ? 'rgba(239,68,68,0.4)' : 'rgba(99,102,241,0.3)';
-          const _ltc = _lv.paid === false ? '#f87171' : '#a5b4fc';
-          td.innerHTML = `<div class="shift-block leave" onclick="openModal(${emp.id},'${dateStr}')" oncontextmenu="showCtx(event,${emp.id},'${dateStr}')" draggable="true" ondragstart="dragStart(event,${emp.id},'${dateStr}')" style="background:${_lc};border-color:${_lb}">
-            <div class="shift-leave-text" style="color:${_ltc}">${_lv.icon} ${_lv.label.toUpperCase()}</div>
-            <div class="tooltip">${_lv.icon} ${_lv.label}</div>
-          </div>`;
+          td.innerHTML = `<div class="shift-block leave" oncontextmenu="showCtx(event,${emp.id},'${dateStr}')"><div class="shift-leave-text">HAFTALİK İZİN</div><div class="tooltip">Haftalık İzin</div></div>`;
         } else if (shift.type === 'special') {
           const hrs = calcHours(shift.in, shift.out);
           td.innerHTML = `<div class="shift-block normal" draggable="true" oncontextmenu="showCtx(event,${emp.id},'${dateStr}')" ondragstart="dragStart(event,${emp.id},'${dateStr}')">
@@ -2077,6 +2066,8 @@ function ctxCopy() {
   closeCtx();
 }
 function ctxDelete() {
+  const _jEmp2 = employees.find(e=>e.id===contextTarget.empId);
+  journalLog('shift_del', contextTarget.dateStr, _jEmp2?.name||'');
   deleteShift(contextTarget.empId, contextTarget.dateStr);
   closeCtx();
   render();
@@ -2103,14 +2094,6 @@ function openModal(empId, dateStr) {
     document.getElementById('inTime').value = existing.in || '11:00';
     document.getElementById('outTime').value = existing.out || '21:00';
     document.getElementById('specialLoc').value = existing.loc || '';
-    // İzin alt tipi
-    if (existing.type === 'leave' && existing.leaveType) {
-      // onTypeChange dolduracak, sonra seçeceğiz
-      setTimeout(() => {
-        const sel = document.getElementById('leaveSubType');
-        if (sel) sel.value = existing.leaveType;
-      }, 10);
-    }
   } else {
     document.getElementById('shiftType').value = 'normal';
     document.getElementById('inTime').value = '11:00';
@@ -2154,23 +2137,6 @@ function onTypeChange() {
   if (sf && t !== 'normal') sf.style.display = 'none';
   const spf = document.getElementById('supportField');
   if (spf) spf.style.display = t === 'normal' ? '' : 'none';
-  // İzin alt tipi
-  const lsf = document.getElementById('leaveSubField');
-  if (lsf) lsf.style.display = t === 'leave' ? '' : 'none';
-  if (t === 'leave') {
-    const sel = document.getElementById('leaveSubType');
-    const current = sel.value;
-    sel.innerHTML = Object.entries(DAY_STATUS)
-      .filter(([k]) => k !== 'calisma' && k !== 'bosta')
-      .map(([k, v]) => `<option value="${k}" ${current===k?'selected':''}>${v.icon} ${v.label}</option>`)
-      .join('');
-    // Özel izinleri de ekle
-    loadOzelIzinler().forEach(o => {
-      if (!sel.querySelector(`option[value="${o.key}"]`))
-        sel.innerHTML += `<option value="${o.key}" ${current===o.key?'selected':''}>${o.icon||'📌'} ${o.label}</option>`;
-    });
-    if (!sel.value) sel.value = 'hafizin';
-  }
   if (t === 'special') {
     const sel = document.getElementById('specialLoc');
     const currentEmp = editTarget ? employees.find(e => e.id === editTarget.empId) : null;
@@ -2199,8 +2165,7 @@ function saveShift() {
   const t = document.getElementById('shiftType').value;
   let data;
   if (t === 'leave') {
-    const lt = document.getElementById('leaveSubType')?.value || 'hafizin';
-    data = {type:'leave', leaveType: lt};
+    data = {type:'leave'};
   } else if (t === 'special') {
     data = {type:'special', loc: document.getElementById('specialLoc').value, in: document.getElementById('inTime').value, out: document.getElementById('outTime').value};
   } else {
@@ -2219,7 +2184,11 @@ function saveShift() {
       ...(support ? {support} : {}),
     };
   }
+  const _jEmp = employees.find(e=>e.id===editTarget.empId);
+  const _jExisting = getShift(editTarget.empId, editTarget.dateStr);
+  const _jAction = _jExisting ? 'shift_edit' : 'shift_add';
   setShift(editTarget.empId, editTarget.dateStr, data);
+  journalLog(_jAction, editTarget.dateStr, _jEmp?.name||'');
   closeModal();
   render();
 }
@@ -2277,6 +2246,7 @@ function clearWeekConfirm() {
 }
 
 function clearWeekConfirmed() {
+  journalLog('week_clear', getWeekByOffset(currentWeekOffset).weekKey);
   const week = getWeekByOffset(currentWeekOffset);
   employees.forEach(emp => {
     week.dates.forEach(dateStr => {
@@ -3140,6 +3110,7 @@ function confirmIstenCikar(empId) {
   const aciklama= document.getElementById('cikisAciklama').value;
 
   // Personeli pasife al
+  journalLog('emp_fire', emp.cikisNedeni||'', emp.name);
   emp.status = 'pasif';
   emp.cikisTarihi = tarih;
   emp.cikisNedeni = neden;
@@ -3215,7 +3186,7 @@ function deleteEmployee(empId) {
 
 function switchTab(tab) {
   // Yetki kontrolü — admin-only sekmeler
-  if ((tab==='personnel' || tab==='puantaj' || tab==='eskipersonel') && !isAdmin()) {
+  if ((tab==='personnel' || tab==='puantaj' || tab==='eskipersonel' || tab==='journal') && !isAdmin()) {
     tab = 'vardiya'; // yetkisiz erişimi engelle
   }
   if (tab==='takvim' && !isEditor()) {
@@ -3227,13 +3198,15 @@ function switchTab(tab) {
   document.getElementById('puantajView').style.display       = tab==='puantaj'       ? 'block' : 'none';
   document.getElementById('eskiPersonelView').style.display  = tab==='eskipersonel'  ? 'block' : 'none';
   document.getElementById('takvimView').style.display        = tab==='takvim'        ? 'block' : 'none';
+  document.getElementById('journalView').style.display       = tab==='journal'       ? 'block' : 'none';
   if (tab === 'eskipersonel') renderEskiPersonel();
-  ['tabVardiya','tabPersonnel','tabPuantaj','tabEskiPersonel','tabTakvim'].forEach((id,i) => {
-    document.getElementById(id).classList.toggle('active', ['vardiya','personnel','puantaj','eskipersonel','takvim'][i]===tab);
+  ['tabVardiya','tabPersonnel','tabPuantaj','tabEskiPersonel','tabTakvim','tabJournal'].forEach((id,i) => {
+    document.getElementById(id).classList.toggle('active', ['vardiya','personnel','puantaj','eskipersonel','takvim','journal'][i]===tab);
   });
   if (tab==='personnel') renderPersonnelList();
   if (tab==='puantaj')   renderPuantaj();
   if (tab==='takvim')    renderTakvim();
+  if (tab==='journal')   renderJournal();
 }
 
 function renderPersonnelList() {
@@ -3566,6 +3539,7 @@ function addIzinModal(empId) {
 
 
 function showRaporModal() {
+  if (!isAdmin()) { showCloudToast('🔒 Bu işlem için admin yetkisi gerekli'); return; }
   let m = document.getElementById('raporModal');
   if (!m) {
     m = document.createElement('div');
@@ -3580,11 +3554,12 @@ function showRaporModal() {
         <button class="btn btn-ghost" style="justify-content:flex-start;gap:10px;padding:12px 16px" onclick="exportExcel('vardiya');document.getElementById('raporModal').classList.remove('open')">
           📅 <div style="text-align:left"><div style="font-weight:600">Vardiya Programı</div><div style="font-size:11px;color:var(--text3)">Mevcut hafta vardiya tablosu</div></div>
         </button>
+        \${isAdmin() ? \`
         <button class="btn btn-ghost" style="justify-content:flex-start;gap:10px;padding:12px 16px" onclick="exportExcel('personel');document.getElementById('raporModal').classList.remove('open')">
           👥 <div style="text-align:left"><div style="font-weight:600">Personel Özlük</div><div style="font-size:11px;color:var(--text3)">Tüm aktif personel bilgileri</div></div>
         </button>
         <button class="btn btn-ghost" style="justify-content:flex-start;gap:10px;padding:12px 16px" onclick="exportExcel('puantaj');document.getElementById('raporModal').classList.remove('open')">
-          💰 <div style="text-align:left"><div style="font-weight:600">Puantaj & Maaş</div><div style="font-size:11px;color:var(--text3)">${MONTHS_TR[puantajMonth]} ${puantajYear} puantaj tablosu</div></div>
+          💰 <div style="text-align:left"><div style="font-weight:600">Puantaj & Maaş</div><div style="font-size:11px;color:var(--text3)">\${MONTHS_TR[puantajMonth]} \${puantajYear} puantaj tablosu</div></div>
         </button>
         <button class="btn btn-ghost" style="justify-content:flex-start;gap:10px;padding:12px 16px" onclick="exportExcel('tumliste');document.getElementById('raporModal').classList.remove('open')">
           📋 <div style="text-align:left"><div style="font-weight:600">Tüm Personel Listesi</div><div style="font-size:11px;color:var(--text3)">Aktif + ayrılan tüm personel</div></div>
@@ -3592,6 +3567,9 @@ function showRaporModal() {
         <button class="btn btn-ghost" style="justify-content:flex-start;gap:10px;padding:12px 16px" onclick="exportExcel('eskipersonel');document.getElementById('raporModal').classList.remove('open')">
           🗂️ <div style="text-align:left"><div style="font-weight:600">Eski Personel</div><div style="font-size:11px;color:var(--text3)">Ayrılan personel & kıdem tazminatı</div></div>
         </button>
+        <button class="btn btn-ghost" style="justify-content:flex-start;gap:10px;padding:12px 16px" onclick="exportExcel('journal');document.getElementById('raporModal').classList.remove('open')">
+          📋 <div style="text-align:left"><div style="font-weight:600">Journal</div><div style="font-size:11px;color:var(--text3)">Tüm aktivite kaydı</div></div>
+        </button>\` : ''}
       </div>
       <div class="modal-footer" style="margin-top:16px">
         <button class="btn btn-ghost" onclick="document.getElementById('raporModal').classList.remove('open')">Kapat</button>
@@ -3603,6 +3581,12 @@ function showRaporModal() {
 // EXCEL EXPORT
 // ============================================================
 async function exportExcel(tip) {
+  // Hassas raporlar sadece admin
+  const adminOnly = ['personel','puantaj','tumliste','eskipersonel'];
+  if (adminOnly.includes(tip) && !isAdmin()) {
+    showCloudToast('🔒 Bu rapor için admin yetkisi gerekli');
+    return;
+  }
   // SheetJS CDN'den yükle
   if (!window.XLSX) {
     await new Promise((res, rej) => {
@@ -3673,6 +3657,29 @@ async function exportExcel(tip) {
     const ws = XLSX.utils.aoa_to_sheet(rows);
     XLSX.utils.book_append_sheet(wb, ws, 'Puantaj ' + ay);
 
+  } else if (tip === 'journal') {
+    if (!isAdmin()) { showCloudToast('🔒 Sadece admin'); return; }
+    const jlogs = journalGet();
+    const ACTION_LABELS_XL = {
+      'login':'Giriş','logout':'Çıkış','shift_add':'Vardiya Eklendi',
+      'shift_edit':'Vardiya Düzenlendi','shift_del':'Vardiya Silindi',
+      'shift_copy':'Kopyala/Yapıştır','week_clear':'Hafta Temizlendi',
+      'emp_add':'Personel Eklendi','emp_edit':'Personel Düzenlendi',
+      'emp_fire':'Personel Çıkarıldı','auto_assign':'Otomatik Atama',
+    };
+    const jrows = [['Tarih','Saat','Kullanıcı','Rol','İşlem','Personel','Detay']];
+    jlogs.forEach(l => {
+      const dt = new Date(l.ts);
+      jrows.push([
+        dt.toLocaleDateString('tr-TR'),
+        dt.toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'}),
+        l.user, l.role,
+        ACTION_LABELS_XL[l.action]||l.action,
+        l.emp||'', l.detail||''
+      ]);
+    });
+    const wsj = XLSX.utils.aoa_to_sheet(jrows);
+    XLSX.utils.book_append_sheet(wb, wsj, 'Journal');
   } else if (tip === 'eskipersonel') {
     const rows = [['Ad Soyad','Lokasyon','Pozisyon','Çıkış Tarihi','Çıkış Nedeni','Açıklama','Çalışma Süresi (yıl)','Kıdem Tazminatı (₺)']];
     employees.filter(e => e.status === 'pasif').forEach(emp => {
@@ -4196,11 +4203,8 @@ function renderPuantajBody() {
   let toplamKesinti = 0; // kesinti katsayısı (1 = tam gün, 0.5 = yarım gün)
   let izinSayilari = { yillikizin:0, idariizin:0, saglikraporu:0, resmitatil:0, ucrsizizin:0, yarimgun:0, devamsizlik:0 };
 
-  // Genel standartları ayarlardan oku, puantajda override varsa onu kullan
-  const _globalStandart = loadCalismaStandart();
-  const normalHour       = parseFloat(puan.s_gunlukSaat ?? hr.gunlukSaat ?? _globalStandart.gunlukSaat ?? 9);
-  const haftalikStandart = parseFloat(puan.s_haftalikSaat ?? hr.haftalikSaat ?? _globalStandart.haftalikSaat ?? 45);
-  const mesaiKatsayi     = parseFloat(_globalStandart.mesaiKatsayi ?? 1.5);
+  const normalHour       = parseFloat(hr.gunlukSaat || 8);
+  const haftalikStandart = parseFloat(puan.s_haftalikSaat ?? hr.haftalikSaat ?? 45);
   const aylikStandartSaat = haftalikStandart * (52 / 12); // aylık standart saat
 
   days.forEach(({d, isWeekend}) => {
@@ -4237,10 +4241,7 @@ function renderPuantajBody() {
 
   // Mesai = aylık standart saatin üzerindeki çalışma
   const efektifMesaiHour = Math.max(0, calismaHour - aylikStandartSaat);
-  // Onay verilmişse ekle, verilmemişse 0
-  const mesaiUcret = (puan._mesaiEkle !== false && efektifMesaiHour > 0)
-    ? efektifMesaiHour * mesaiSaatlik * mesaiKatsayi
-    : 0;
+  const mesaiUcret = efektifMesaiHour * mesaiSaatlik * 1.5;
 
   // Primler
   const primler = puan.primler || [];
@@ -4586,41 +4587,6 @@ function deleteAvans(idx) {
 function savePuantajData() {
   // Draft varsa onu kullan, yoksa mevcut veriyi yükle
   const puan = puantajDraft || loadPuantaj(puantajEmpId, puantajYear, puantajMonth);
-
-  // Mesai onay sorusu
-  const _std = loadCalismaStandart();
-  if (_std.mesaiSorulsun !== false) {
-    const hr2   = getEmpHR(puantajEmpId);
-    const _hstd = parseFloat(puan.s_haftalikSaat ?? hr2.haftalikSaat ?? _std.haftalikSaat ?? 45);
-    const _aystd = _hstd * (52/12);
-    // Toplam çalışma saatini hesapla
-    let _toplamH = 0;
-    const _normalH = parseFloat(puan.s_gunlukSaat ?? hr2.gunlukSaat ?? _std.gunlukSaat ?? 9);
-    Object.values(puan.days || {}).forEach(d => {
-      if (d.status === 'calisma') {
-        _toplamH += (d.in && d.out) ? calcHours(d.in, d.out) : _normalH;
-      }
-    });
-    const _mesaiH = Math.max(0, _toplamH - _aystd);
-    if (_mesaiH > 0 && !puan._mesaiOnaylandi) {
-      const onay = confirm(
-        `⏰ Mesai Tespiti
-
-` +
-        `Bu ay toplam ${_toplamH.toFixed(1)} saat çalışma var.
-` +
-        `Aylık standart: ${_aystd.toFixed(1)} saat
-` +
-        `Fazla çalışma: ${_mesaiH.toFixed(1)} saat
-
-` +
-        `Mesai ücreti (×${_std.mesaiKatsayi}) hesaba eklensin mi?`
-      );
-      puan._mesaiOnaylandi = onay;
-      puan._mesaiEkle = onay;
-    }
-  }
-
   puantajDraft = null; // draft'ı temizle
   // Maaş ayarlarını input'lardan oku ve kaydet
   const hr = getEmpHR(puantajEmpId);
@@ -5204,8 +5170,7 @@ async function deleteUser(uname) {
 function switchStab(n) {
   if (n === 4) renderIzinTipleriPanel();
   if (n === 5) refreshLocalInfo();
-  if (n === 6) renderCalismaStandartlari();
-  [1,2,3,4,5,6].forEach(i => {
+  [1,2,3,4,5].forEach(i => {
     const body = document.getElementById('stabBody'+i);
     const tab  = document.getElementById('stab'+i);
     if (body) body.style.display = i===n?'':'none';
@@ -5386,122 +5351,6 @@ function getStoreHoursForDay(loc, dateStr) {
   };
 }
 
-
-// ============================================================
-// ÇALIŞMA STANDARTLARI
-// ============================================================
-const STANDART_KEY = 'vp_calisma_standart';
-
-function loadCalismaStandart() {
-  try { return JSON.parse(localStorage.getItem(STANDART_KEY) || 'null') || {
-    haftalikSaat: 45,
-    mesaiKatsayi: 1.5,
-    mesaiSorulsun: true,
-    gunlukSaat: 9,
-  }; } catch(e) { return { haftalikSaat:45, mesaiKatsayi:1.5, mesaiSorulsun:true, gunlukSaat:9 }; }
-}
-
-function saveCalismaStandart(data) {
-  localStorage.setItem(STANDART_KEY, JSON.stringify(data));
-  showSaveToast();
-}
-
-function renderCalismaStandartlari() {
-  const s = loadCalismaStandart();
-  const panel = document.getElementById('calismaStandartlariPanel');
-  panel.innerHTML = `
-    <div style="font-size:12px;color:var(--text2);margin-bottom:16px">
-      Tüm çalışanlar için geçerli varsayılan standartlar. Puantaj hesaplanırken bu değerler baz alınır.
-    </div>
-
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
-      <div class="sh-field">
-        <label class="sh-label">📅 Haftalık Standart Saat</label>
-        <div style="display:flex;align-items:center;gap:8px">
-          <input class="sh-input" type="number" id="std_haftalikSaat"
-            value="${s.haftalikSaat}" min="20" max="60" style="width:80px">
-          <span style="font-size:12px;color:var(--text3)">saat / hafta</span>
-        </div>
-        <div style="font-size:10px;color:var(--text3);margin-top:4px">Bu saatin üzeri mesai sayılır</div>
-      </div>
-
-      <div class="sh-field">
-        <label class="sh-label">⏰ Günlük Standart Saat</label>
-        <div style="display:flex;align-items:center;gap:8px">
-          <input class="sh-input" type="number" id="std_gunlukSaat"
-            value="${s.gunlukSaat}" min="4" max="12" style="width:80px">
-          <span style="font-size:12px;color:var(--text3)">saat / gün</span>
-        </div>
-        <div style="font-size:10px;color:var(--text3);margin-top:4px">Saat girilmemiş günlerde varsayılan</div>
-      </div>
-
-      <div class="sh-field">
-        <label class="sh-label">💰 Mesai Katsayısı</label>
-        <div style="display:flex;align-items:center;gap:8px">
-          <input class="sh-input" type="number" id="std_mesaiKatsayi"
-            value="${s.mesaiKatsayi}" min="1" max="3" step="0.25" style="width:80px">
-          <span style="font-size:12px;color:var(--text3)">× normal ücret</span>
-        </div>
-        <div style="font-size:10px;color:var(--text3);margin-top:4px">Genellikle 1.5× (yasal minimum)</div>
-      </div>
-    </div>
-
-    <div style="border-top:1px solid var(--border);padding-top:14px;margin-bottom:16px">
-      <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Puantaj Davranışı</div>
-      <label class="sh-check">
-        <input type="checkbox" id="std_mesaiSorulsun" ${s.mesaiSorulsun !== false ? 'checked' : ''}
-          style="accent-color:var(--accent);width:15px;height:15px">
-        <div>
-          <div style="font-size:13px;font-weight:600;color:var(--text)">💬 Mesai tespitinde onay sor</div>
-          <div style="font-size:10px;color:var(--text3);margin-top:1px">
-            Hesaplarken standart saati aşan çalışma varsa "Mesai eklensin mi?" diye sorar
-          </div>
-        </div>
-      </label>
-    </div>
-
-    <!-- Hesaplamalı önizleme -->
-    <div style="background:rgba(79,142,247,0.08);border:1px solid rgba(79,142,247,0.2);border-radius:10px;padding:14px;margin-bottom:16px">
-      <div style="font-size:11px;font-weight:700;color:var(--accent);margin-bottom:8px">📊 Hesaplama Önizlemesi</div>
-      <div style="font-size:12px;color:var(--text2);line-height:2">
-        Haftalık standart: <b id="prev_hafta">45</b> saat →
-        Aylık standart: <b id="prev_aylik">~195</b> saat<br>
-        Fazla çalışma × <b id="prev_katsayi">1.5</b> = mesai ücreti
-      </div>
-    </div>
-
-    <button class="btn btn-primary" style="width:100%;padding:10px" onclick="saveCalismaStandartlari()">
-      💾 Standartları Kaydet
-    </button>
-  `;
-
-  // Önizleme güncelleme
-  ['std_haftalikSaat','std_mesaiKatsayi'].forEach(id => {
-    document.getElementById(id)?.addEventListener('input', updateStandartPreview);
-  });
-  updateStandartPreview();
-}
-
-function updateStandartPreview() {
-  const h  = parseFloat(document.getElementById('std_haftalikSaat')?.value || 45);
-  const k  = parseFloat(document.getElementById('std_mesaiKatsayi')?.value || 1.5);
-  const ay = Math.round(h * 52 / 12);
-  const pv = document.getElementById('prev_hafta');   if (pv) pv.textContent = h;
-  const pa = document.getElementById('prev_aylik');   if (pa) pa.textContent = '~' + ay;
-  const pk = document.getElementById('prev_katsayi'); if (pk) pk.textContent = k;
-}
-
-function saveCalismaStandartlari() {
-  const g  = id => document.getElementById(id);
-  const gb = id => document.getElementById(id)?.checked;
-  saveCalismaStandart({
-    haftalikSaat:  parseFloat(g('std_haftalikSaat')?.value  || 45),
-    gunlukSaat:    parseFloat(g('std_gunlukSaat')?.value    || 9),
-    mesaiKatsayi:  parseFloat(g('std_mesaiKatsayi')?.value  || 1.5),
-    mesaiSorulsun: gb('std_mesaiSorulsun') !== false,
-  });
-}
-
 // ── SAVE INDICATOR ────────────────────────────────────────────────────────────
 // Show a brief "Kaydedildi" toast on save
 function showSaveToast() {
@@ -5589,6 +5438,148 @@ async function loadCloudData() {
   }
 }
 
+
+// ============================================================
+// JOURNAL — Aktivite Kaydı
+// ============================================================
+const JOURNAL_KEY = 'dual_journal_v1';
+const JOURNAL_MAX = 500; // max kayıt
+
+function journalLog(action, detail, empName) {
+  if (!isAdmin() && !isEditor()) return; // sadece giriş yapmış kullanıcılar
+  try {
+    const logs = journalGet();
+    logs.unshift({
+      ts:   new Date().toISOString(),
+      user: currentDisplay || currentUsername || '?',
+      role: userRole || 'viewer',
+      action,
+      detail: detail || '',
+      emp:    empName || '',
+    });
+    if (logs.length > JOURNAL_MAX) logs.length = JOURNAL_MAX;
+    localStorage.setItem(JOURNAL_KEY, JSON.stringify(logs));
+  } catch(e) {}
+}
+
+function journalGet() {
+  try { return JSON.parse(localStorage.getItem(JOURNAL_KEY)) || []; }
+  catch(e) { return []; }
+}
+
+function journalClear() {
+  if (!isAdmin()) return;
+  if (!confirm('Tüm journal kayıtları silinecek. Emin misiniz?')) return;
+  localStorage.removeItem(JOURNAL_KEY);
+  renderJournal();
+  showCloudToast('🗑️ Journal temizlendi');
+}
+
+function renderJournal() {
+  if (!isAdmin()) return;
+  const view = document.getElementById('journalView');
+  if (!view) return;
+  const logs = journalGet();
+
+  // Filtre state
+  const filterUser  = document.getElementById('jFilterUser')?.value  || '';
+  const filterAct   = document.getElementById('jFilterAction')?.value || '';
+  const filterDate  = document.getElementById('jFilterDate')?.value   || '';
+
+  const filtered = logs.filter(l => {
+    if (filterUser && !l.user.toLowerCase().includes(filterUser.toLowerCase())) return false;
+    if (filterAct  && l.action !== filterAct) return false;
+    if (filterDate && !l.ts.startsWith(filterDate)) return false;
+    return true;
+  });
+
+  // Benzersiz kullanıcılar ve aksiyonlar
+  const users   = [...new Set(logs.map(l => l.user))];
+  const actions = [...new Set(logs.map(l => l.action))];
+
+  const ACTION_LABELS = {
+    'login':       '🔑 Giriş',
+    'logout':      '🚪 Çıkış',
+    'shift_add':   '➕ Vardiya Eklendi',
+    'shift_edit':  '✏️ Vardiya Düzenlendi',
+    'shift_del':   '🗑️ Vardiya Silindi',
+    'shift_copy':  '📋 Kopyala/Yapıştır',
+    'week_clear':  '🧹 Hafta Temizlendi',
+    'emp_add':     '👤 Personel Eklendi',
+    'emp_edit':    '✏️ Personel Düzenlendi',
+    'emp_fire':    '🚫 Personel Çıkarıldı',
+    'auto_assign': '⚡ Otomatik Atama',
+  };
+
+  const roleColor = { admin:'var(--blue)', editor:'var(--green)', viewer:'var(--text3)' };
+
+  view.innerHTML = \`
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <div>
+        <div style="font-size:18px;font-weight:700">📋 Journal</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:2px">\${logs.length} kayıt · Son \${JOURNAL_MAX} etkinlik saklanıyor</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost" style="font-size:11px" onclick="exportExcel('journal')">📥 Excel</button>
+        <button class="btn btn-ghost" style="font-size:11px;color:var(--red)" onclick="journalClear()">🗑️ Temizle</button>
+      </div>
+    </div>
+
+    <!-- Filtreler -->
+    <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+      <input id="jFilterDate" type="date" value="\${filterDate}"
+        style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--text);font-size:12px"
+        onchange="renderJournal()" placeholder="Tarih">
+      <select id="jFilterUser"
+        style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--text);font-size:12px"
+        onchange="renderJournal()">
+        <option value="">Tüm kullanıcılar</option>
+        \${users.map(u => \`<option value="\${u}" \${u===filterUser?'selected':''}>\${u}</option>\`).join('')}
+      </select>
+      <select id="jFilterAction"
+        style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--text);font-size:12px"
+        onchange="renderJournal()">
+        <option value="">Tüm işlemler</option>
+        \${actions.map(a => \`<option value="\${a}" \${a===filterAct?'selected':''}>\${ACTION_LABELS[a]||a}</option>\`).join('')}
+      </select>
+      <span style="font-size:12px;color:var(--text3);align-self:center">\${filtered.length} sonuç</span>
+    </div>
+
+    <!-- Tablo -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden">
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead>
+          <tr style="background:var(--surface2)">
+            <th style="padding:10px 14px;text-align:left;color:var(--text3);font-weight:600;white-space:nowrap">Tarih / Saat</th>
+            <th style="padding:10px 14px;text-align:left;color:var(--text3);font-weight:600">Kullanıcı</th>
+            <th style="padding:10px 14px;text-align:left;color:var(--text3);font-weight:600">İşlem</th>
+            <th style="padding:10px 14px;text-align:left;color:var(--text3);font-weight:600">Detay</th>
+          </tr>
+        </thead>
+        <tbody>
+          \${filtered.length === 0 ? \`<tr><td colspan="4" style="padding:32px;text-align:center;color:var(--text3)">Kayıt bulunamadı</td></tr>\` :
+            filtered.map(l => {
+              const dt = new Date(l.ts);
+              const dateStr = dt.toLocaleDateString('tr-TR');
+              const timeStr = dt.toLocaleTimeString('tr-TR', {hour:'2-digit',minute:'2-digit'});
+              const actionLabel = ACTION_LABELS[l.action] || l.action;
+              return \`<tr style="border-top:1px solid var(--border)">
+                <td style="padding:9px 14px;color:var(--text3);white-space:nowrap">\${dateStr} <span style="color:var(--text2)">\${timeStr}</span></td>
+                <td style="padding:9px 14px">
+                  <span style="color:\${roleColor[l.role]||'var(--text)'};font-weight:600">\${l.user}</span>
+                  <span style="font-size:10px;color:var(--text3);margin-left:4px">(\${l.role})</span>
+                </td>
+                <td style="padding:9px 14px;white-space:nowrap">\${actionLabel}</td>
+                <td style="padding:9px 14px;color:var(--text2)">\${l.emp ? '<strong>'+l.emp+'</strong> ' : ''}\${l.detail}</td>
+              </tr>\`;
+            }).join('')
+          }
+        </tbody>
+      </table>
+    </div>
+  \`;
+}
+
 // Uygulamayı başlat
 initApp();
 </script>
@@ -5674,7 +5665,6 @@ initApp();
       <button class="drawer-tab" id="stab2" onclick="switchStab(2)" style="font-size:12px">🕐 Mağaza Saatleri</button>
       <button class="drawer-tab" id="stab3" onclick="switchStab(3)" style="font-size:12px">👥 Kullanıcılar</button>
       <button class="drawer-tab" id="stab4" onclick="switchStab(4)" style="font-size:12px">📅 İzin Tipleri</button>
-      <button class="drawer-tab" id="stab6" onclick="switchStab(6)" style="font-size:12px">⏱️ Çalışma Standartları</button>
       <button class="drawer-tab" id="stab5" onclick="switchStab(5)" style="font-size:12px">🛟 Veri Kurtarma</button>
     </div>
     <!-- Tab 1: Lokasyonlar -->
@@ -5713,10 +5703,6 @@ initApp();
     <!-- Tab 4: İzin Tipleri -->
     <div id="stabBody4" style="display:none;flex:1;overflow-y:auto">
       <div id="izinTipleriPanel"></div>
-    </div>
-    <!-- Tab 6: Çalışma Standartları -->
-    <div id="stabBody6" style="display:none;flex:1;overflow-y:auto">
-      <div id="calismaStandartlariPanel"></div>
     </div>
     <!-- Tab 5: Veri Kurtarma -->
     <div id="stabBody5" style="display:none;flex:1;overflow-y:auto">
@@ -5778,6 +5764,8 @@ initApp();
     </div>
   </div>
 </div>
+
+<div id="journalView" style="display:none;padding:24px 32px"></div>
 
 <script>
   // Sayfa yüklenince uygulamayı başlat
