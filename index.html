@@ -3547,34 +3547,27 @@ function showRaporModal() {
     m.className = 'modal-overlay';
     document.body.appendChild(m);
   }
-  m.innerHTML = `
-    <div class="modal" style="width:400px">
-      <div class="modal-title">📥 Rapor Al</div>
-      <div style="display:flex;flex-direction:column;gap:10px;margin-top:16px">
-        <button class="btn btn-ghost" style="justify-content:flex-start;gap:10px;padding:12px 16px" onclick="exportExcel('vardiya');document.getElementById('raporModal').classList.remove('open')">
-          📅 <div style="text-align:left"><div style="font-weight:600">Vardiya Programı</div><div style="font-size:11px;color:var(--text3)">Mevcut hafta vardiya tablosu</div></div>
-        </button>
-        \${isAdmin() ? \`
-        <button class="btn btn-ghost" style="justify-content:flex-start;gap:10px;padding:12px 16px" onclick="exportExcel('personel');document.getElementById('raporModal').classList.remove('open')">
-          👥 <div style="text-align:left"><div style="font-weight:600">Personel Özlük</div><div style="font-size:11px;color:var(--text3)">Tüm aktif personel bilgileri</div></div>
-        </button>
-        <button class="btn btn-ghost" style="justify-content:flex-start;gap:10px;padding:12px 16px" onclick="exportExcel('puantaj');document.getElementById('raporModal').classList.remove('open')">
-          💰 <div style="text-align:left"><div style="font-weight:600">Puantaj & Maaş</div><div style="font-size:11px;color:var(--text3)">\${MONTHS_TR[puantajMonth]} \${puantajYear} puantaj tablosu</div></div>
-        </button>
-        <button class="btn btn-ghost" style="justify-content:flex-start;gap:10px;padding:12px 16px" onclick="exportExcel('tumliste');document.getElementById('raporModal').classList.remove('open')">
-          📋 <div style="text-align:left"><div style="font-weight:600">Tüm Personel Listesi</div><div style="font-size:11px;color:var(--text3)">Aktif + ayrılan tüm personel</div></div>
-        </button>
-        <button class="btn btn-ghost" style="justify-content:flex-start;gap:10px;padding:12px 16px" onclick="exportExcel('eskipersonel');document.getElementById('raporModal').classList.remove('open')">
-          🗂️ <div style="text-align:left"><div style="font-weight:600">Eski Personel</div><div style="font-size:11px;color:var(--text3)">Ayrılan personel & kıdem tazminatı</div></div>
-        </button>
-        <button class="btn btn-ghost" style="justify-content:flex-start;gap:10px;padding:12px 16px" onclick="exportExcel('journal');document.getElementById('raporModal').classList.remove('open')">
-          📋 <div style="text-align:left"><div style="font-weight:600">Journal</div><div style="font-size:11px;color:var(--text3)">Tüm aktivite kaydı</div></div>
-        </button>\` : ''}
-      </div>
-      <div class="modal-footer" style="margin-top:16px">
-        <button class="btn btn-ghost" onclick="document.getElementById('raporModal').classList.remove('open')">Kapat</button>
-      </div>
-    </div>`;
+  var adminBtns2 = isAdmin() ? (
+    '<button class="btn btn-ghost" style="justify-content:flex-start;gap:10px;padding:12px 16px" onclick="exportExcel(\'personel\');document.getElementById(\'raporModal\').classList.remove(\'open\')">' +
+    '👥 <div style="text-align:left"><div style="font-weight:600">Personel Özlük</div><div style="font-size:11px;color:var(--text3)">Tüm aktif personel bilgileri</div></div></button>' +
+    '<button class="btn btn-ghost" style="justify-content:flex-start;gap:10px;padding:12px 16px" onclick="exportExcel(\'puantaj\');document.getElementById(\'raporModal\').classList.remove(\'open\')">' +
+    '💰 <div style="text-align:left"><div style="font-weight:600">Puantaj & Maaş</div><div style="font-size:11px;color:var(--text3)">'+MONTHS_TR[puantajMonth]+' '+puantajYear+' puantaj tablosu</div></div></button>' +
+    '<button class="btn btn-ghost" style="justify-content:flex-start;gap:10px;padding:12px 16px" onclick="exportExcel(\'tumliste\');document.getElementById(\'raporModal\').classList.remove(\'open\')">' +
+    '📋 <div style="text-align:left"><div style="font-weight:600">Tüm Personel Listesi</div><div style="font-size:11px;color:var(--text3)">Aktif + ayrılan tüm personel</div></div></button>' +
+    '<button class="btn btn-ghost" style="justify-content:flex-start;gap:10px;padding:12px 16px" onclick="exportExcel(\'eskipersonel\');document.getElementById(\'raporModal\').classList.remove(\'open\')">' +
+    '🗂️ <div style="text-align:left"><div style="font-weight:600">Eski Personel</div><div style="font-size:11px;color:var(--text3)">Ayrılan personel & kıdem tazminatı</div></div></button>' +
+    '<button class="btn btn-ghost" style="justify-content:flex-start;gap:10px;padding:12px 16px" onclick="exportExcel(\'journal\');document.getElementById(\'raporModal\').classList.remove(\'open\')">' +
+    '📋 <div style="text-align:left"><div style="font-weight:600">Journal</div><div style="font-size:11px;color:var(--text3)">Tüm aktivite kaydı</div></div></button>'
+  ) : '';
+  m.innerHTML = '<div class="modal" style="width:400px">'
+    + '<div class="modal-title">📥 Rapor Al</div>'
+    + '<div style="display:flex;flex-direction:column;gap:10px;margin-top:16px">'
+    + '<button class="btn btn-ghost" style="justify-content:flex-start;gap:10px;padding:12px 16px" onclick="exportExcel(\'vardiya\');document.getElementById(\'raporModal\').classList.remove(\'open\')">' +
+      '📅 <div style="text-align:left"><div style="font-weight:600">Vardiya Programı</div><div style="font-size:11px;color:var(--text3)">Mevcut hafta vardiya tablosu</div></div></button>'
+    + adminBtns2
+    + '</div>'
+    + '<div class="modal-footer" style="margin-top:16px"><button class="btn btn-ghost" onclick="document.getElementById(\'raporModal\').classList.remove(\'open\')">Kapat</button></div>'
+    + '</div>';
   m.classList.add('open');
 }
 // ============================================================
@@ -5481,103 +5474,77 @@ function renderJournal() {
   if (!view) return;
   const logs = journalGet();
 
-  // Filtre state
-  const filterUser  = document.getElementById('jFilterUser')?.value  || '';
-  const filterAct   = document.getElementById('jFilterAction')?.value || '';
-  const filterDate  = document.getElementById('jFilterDate')?.value   || '';
+  const filterUser = document.getElementById('jFilterUser')?.value  || '';
+  const filterAct  = document.getElementById('jFilterAction')?.value || '';
+  const filterDate = document.getElementById('jFilterDate')?.value   || '';
 
-  const filtered = logs.filter(l => {
-    if (filterUser && !l.user.toLowerCase().includes(filterUser.toLowerCase())) return false;
+  const filtered = logs.filter(function(l) {
+    if (filterUser && l.user.toLowerCase().indexOf(filterUser.toLowerCase()) < 0) return false;
     if (filterAct  && l.action !== filterAct) return false;
-    if (filterDate && !l.ts.startsWith(filterDate)) return false;
+    if (filterDate && l.ts.indexOf(filterDate) !== 0) return false;
     return true;
   });
 
-  // Benzersiz kullanıcılar ve aksiyonlar
-  const users   = [...new Set(logs.map(l => l.user))];
-  const actions = [...new Set(logs.map(l => l.action))];
+  const users   = [...new Set(logs.map(function(l){ return l.user; }))];
+  const actions = [...new Set(logs.map(function(l){ return l.action; }))];
 
-  const ACTION_LABELS = {
-    'login':       '🔑 Giriş',
-    'logout':      '🚪 Çıkış',
-    'shift_add':   '➕ Vardiya Eklendi',
-    'shift_edit':  '✏️ Vardiya Düzenlendi',
-    'shift_del':   '🗑️ Vardiya Silindi',
-    'shift_copy':  '📋 Kopyala/Yapıştır',
-    'week_clear':  '🧹 Hafta Temizlendi',
-    'emp_add':     '👤 Personel Eklendi',
-    'emp_edit':    '✏️ Personel Düzenlendi',
-    'emp_fire':    '🚫 Personel Çıkarıldı',
-    'auto_assign': '⚡ Otomatik Atama',
+  const AL = {
+    'login':'🔑 Giriş','logout':'🚪 Çıkış',
+    'shift_add':'➕ Vardiya Eklendi','shift_edit':'✏️ Vardiya Düzenlendi',
+    'shift_del':'🗑️ Vardiya Silindi','shift_copy':'📋 Kopyala/Yapıştır',
+    'week_clear':'🧹 Hafta Temizlendi','emp_add':'👤 Personel Eklendi',
+    'emp_edit':'✏️ Personel Düzenlendi','emp_fire':'🚫 Personel Çıkarıldı',
+    'auto_assign':'⚡ Otomatik Atama',
   };
+  const RC = {admin:'var(--blue)',editor:'var(--green)',viewer:'var(--text3)'};
 
-  const roleColor = { admin:'var(--blue)', editor:'var(--green)', viewer:'var(--text3)' };
+  var userOpts = '<option value="">Tüm kullanıcılar</option>' +
+    users.map(function(u){ return '<option value="'+u+'"'+(u===filterUser?' selected':'')+'>'+u+'</option>'; }).join('');
+  var actOpts = '<option value="">Tüm işlemler</option>' +
+    actions.map(function(a){ return '<option value="'+a+'"'+(a===filterAct?' selected':'')+'>'+( AL[a]||a)+'</option>'; }).join('');
 
-  view.innerHTML = \`
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
-      <div>
-        <div style="font-size:18px;font-weight:700">📋 Journal</div>
-        <div style="font-size:12px;color:var(--text3);margin-top:2px">\${logs.length} kayıt · Son \${JOURNAL_MAX} etkinlik saklanıyor</div>
-      </div>
-      <div style="display:flex;gap:8px">
-        <button class="btn btn-ghost" style="font-size:11px" onclick="exportExcel('journal')">📥 Excel</button>
-        <button class="btn btn-ghost" style="font-size:11px;color:var(--red)" onclick="journalClear()">🗑️ Temizle</button>
-      </div>
-    </div>
+  var rows = filtered.length === 0
+    ? '<tr><td colspan="4" style="padding:32px;text-align:center;color:var(--text3)">Henüz kayıt yok</td></tr>'
+    : filtered.map(function(l) {
+        var dt = new Date(l.ts);
+        var ds = dt.toLocaleDateString('tr-TR');
+        var ts = dt.toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'});
+        var al = AL[l.action]||l.action;
+        var emp = l.emp ? '<strong>'+l.emp+'</strong> ' : '';
+        return '<tr style="border-top:1px solid var(--border)">'
+          +'<td style="padding:9px 14px;color:var(--text3);white-space:nowrap">'+ds+' <span style="color:var(--text2)">'+ts+'</span></td>'
+          +'<td style="padding:9px 14px"><span style="color:'+(RC[l.role]||'var(--text)')+';font-weight:600">'+l.user+'</span>'
+          +' <span style="font-size:10px;color:var(--text3)">('+l.role+')</span></td>'
+          +'<td style="padding:9px 14px;white-space:nowrap">'+al+'</td>'
+          +'<td style="padding:9px 14px;color:var(--text2)">'+emp+(l.detail||'')+'</td>'
+          +'</tr>';
+      }).join('');
 
-    <!-- Filtreler -->
-    <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
-      <input id="jFilterDate" type="date" value="\${filterDate}"
-        style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--text);font-size:12px"
-        onchange="renderJournal()" placeholder="Tarih">
-      <select id="jFilterUser"
-        style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--text);font-size:12px"
-        onchange="renderJournal()">
-        <option value="">Tüm kullanıcılar</option>
-        \${users.map(u => \`<option value="\${u}" \${u===filterUser?'selected':''}>\${u}</option>\`).join('')}
-      </select>
-      <select id="jFilterAction"
-        style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--text);font-size:12px"
-        onchange="renderJournal()">
-        <option value="">Tüm işlemler</option>
-        \${actions.map(a => \`<option value="\${a}" \${a===filterAct?'selected':''}>\${ACTION_LABELS[a]||a}</option>\`).join('')}
-      </select>
-      <span style="font-size:12px;color:var(--text3);align-self:center">\${filtered.length} sonuç</span>
-    </div>
-
-    <!-- Tablo -->
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden">
-      <table style="width:100%;border-collapse:collapse;font-size:12px">
-        <thead>
-          <tr style="background:var(--surface2)">
-            <th style="padding:10px 14px;text-align:left;color:var(--text3);font-weight:600;white-space:nowrap">Tarih / Saat</th>
-            <th style="padding:10px 14px;text-align:left;color:var(--text3);font-weight:600">Kullanıcı</th>
-            <th style="padding:10px 14px;text-align:left;color:var(--text3);font-weight:600">İşlem</th>
-            <th style="padding:10px 14px;text-align:left;color:var(--text3);font-weight:600">Detay</th>
-          </tr>
-        </thead>
-        <tbody>
-          \${filtered.length === 0 ? \`<tr><td colspan="4" style="padding:32px;text-align:center;color:var(--text3)">Kayıt bulunamadı</td></tr>\` :
-            filtered.map(l => {
-              const dt = new Date(l.ts);
-              const dateStr = dt.toLocaleDateString('tr-TR');
-              const timeStr = dt.toLocaleTimeString('tr-TR', {hour:'2-digit',minute:'2-digit'});
-              const actionLabel = ACTION_LABELS[l.action] || l.action;
-              return \`<tr style="border-top:1px solid var(--border)">
-                <td style="padding:9px 14px;color:var(--text3);white-space:nowrap">\${dateStr} <span style="color:var(--text2)">\${timeStr}</span></td>
-                <td style="padding:9px 14px">
-                  <span style="color:\${roleColor[l.role]||'var(--text)'};font-weight:600">\${l.user}</span>
-                  <span style="font-size:10px;color:var(--text3);margin-left:4px">(\${l.role})</span>
-                </td>
-                <td style="padding:9px 14px;white-space:nowrap">\${actionLabel}</td>
-                <td style="padding:9px 14px;color:var(--text2)">\${l.emp ? '<strong>'+l.emp+'</strong> ' : ''}\${l.detail}</td>
-              </tr>\`;
-            }).join('')
-          }
-        </tbody>
-      </table>
-    </div>
-  \`;
+  view.innerHTML =
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">'
+    +'<div><div style="font-size:18px;font-weight:700">📋 Journal</div>'
+    +'<div style="font-size:12px;color:var(--text3);margin-top:2px">'+logs.length+' kayıt · Son '+JOURNAL_MAX+' etkinlik</div></div>'
+    +'<div style="display:flex;gap:8px">'
+    +'<button class="btn btn-ghost" style="font-size:11px" onclick="exportExcel(\'journal\')">📥 Excel</button>'
+    +'<button class="btn btn-ghost" style="font-size:11px;color:var(--red)" onclick="journalClear()">🗑️ Temizle</button>'
+    +'</div></div>'
+    +'<div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">'
+    +'<input id="jFilterDate" type="date" value="'+filterDate+'" onchange="renderJournal()" '
+    +'style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--text);font-size:12px">'
+    +'<select id="jFilterUser" onchange="renderJournal()" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--text);font-size:12px">'+userOpts+'</select>'
+    +'<select id="jFilterAction" onchange="renderJournal()" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--text);font-size:12px">'+actOpts+'</select>'
+    +'<span style="font-size:12px;color:var(--text3);align-self:center">'+filtered.length+' sonuç</span>'
+    +'</div>'
+    +'<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden">'
+    +'<table style="width:100%;border-collapse:collapse;font-size:12px">'
+    +'<thead><tr style="background:var(--surface2)">'
+    +'<th style="padding:10px 14px;text-align:left;color:var(--text3);font-weight:600;white-space:nowrap">Tarih / Saat</th>'
+    +'<th style="padding:10px 14px;text-align:left;color:var(--text3);font-weight:600">Kullanıcı</th>'
+    +'<th style="padding:10px 14px;text-align:left;color:var(--text3);font-weight:600">İşlem</th>'
+    +'<th style="padding:10px 14px;text-align:left;color:var(--text3);font-weight:600">Detay</th>'
+    +'</tr></thead>'
+    +'<tbody>'+rows+'</tbody>'
+    +'</table></div>';
 }
 
 // Uygulamayı başlat
